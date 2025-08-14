@@ -40,7 +40,6 @@ export default function PaymentMethods() {
   })
 
   const handleAddCard = () => {
-    // Simulate adding a new card
     const newMethod = {
       id: Date.now().toString(),
       type: "visa",
@@ -88,7 +87,7 @@ export default function PaymentMethods() {
               className="flex items-center justify-between p-4 bg-gray-800 rounded-lg border border-gray-700"
             >
               <div className="flex items-center gap-4">
-                <div className="w-12 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded flex items-center justify-center">
+                <div className="w-12 h-8 bg-gradient-to-r from-blue-600 to-blue-400 rounded flex items-center justify-center">
                   <CreditCard className="w-5 h-5 text-white" />
                 </div>
                 <div>
@@ -96,7 +95,7 @@ export default function PaymentMethods() {
                   <p className="text-gray-400 text-sm">
                     Expires {method.expiryMonth.toString().padStart(2, "0")}/{method.expiryYear}
                     {method.isDefault && (
-                      <span className="ml-2 bg-green-600 text-white px-2 py-1 rounded text-xs">Default</span>
+                      <span className="ml-2 bg-blue-600 text-white px-2 py-1 rounded text-xs">Default</span>
                     )}
                   </p>
                 </div>
@@ -115,7 +114,7 @@ export default function PaymentMethods() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                  className="text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
                   onClick={() => handleRemoveCard(method.id)}
                 >
                   <Trash2 className="w-4 h-4" />
@@ -182,7 +181,7 @@ export default function PaymentMethods() {
                 Your payment information is encrypted and secure
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleAddCard} className="bg-red-600 hover:bg-red-700 text-white">
+                <Button onClick={handleAddCard} className="bg-blue-600 hover:bg-blue-700 text-white">
                   Add Card
                 </Button>
                 <Button

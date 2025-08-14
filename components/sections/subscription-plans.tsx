@@ -65,7 +65,6 @@ export default function SubscriptionPlans() {
   const handlePlanChange = async (planId: string) => {
     setIsLoading(true)
 
-    // Simulate API call
     setTimeout(() => {
       setCurrentPlan(planId)
       dispatch(
@@ -90,7 +89,7 @@ export default function SubscriptionPlans() {
         <CardContent>
           <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg border border-gray-700">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-blue-400 rounded-full flex items-center justify-center">
                 <Crown className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -100,7 +99,7 @@ export default function SubscriptionPlans() {
                 <p className="text-gray-400">${subscriptionPlans.find((p) => p.id === currentPlan)?.price}/month</p>
               </div>
             </div>
-            <Badge className="bg-green-600 text-white">Active</Badge>
+            <Badge className="bg-blue-600 text-white">Active</Badge>
           </div>
         </CardContent>
       </Card>
@@ -113,16 +112,18 @@ export default function SubscriptionPlans() {
           return (
             <Card
               key={plan.id}
-              className={`relative bg-gray-900 border-gray-800 ${plan.popular ? "ring-2 ring-red-600" : ""}`}
+              className={`relative bg-gray-900 border-gray-800 ${
+                plan.popular ? "ring-2 ring-blue-600" : ""
+              }`}
             >
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <Badge className="bg-red-600 text-white">Most Popular</Badge>
+                  <Badge className="bg-blue-600 text-white">Most Popular</Badge>
                 </div>
               )}
 
               <CardHeader className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-red-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-blue-400 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Icon className="w-8 h-8 text-white" />
                 </div>
                 <CardTitle className="text-white text-2xl">{plan.name}</CardTitle>
@@ -137,7 +138,7 @@ export default function SubscriptionPlans() {
                 <ul className="space-y-3">
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-center gap-3 text-gray-300">
-                      <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
+                      <Check className="w-5 h-5 text-blue-500 flex-shrink-0" />
                       {feature}
                     </li>
                   ))}
@@ -147,7 +148,7 @@ export default function SubscriptionPlans() {
                   className={`w-full ${
                     isCurrentPlan
                       ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                      : "bg-red-600 hover:bg-red-700 text-white"
+                      : "bg-blue-600 hover:bg-blue-700 text-white"
                   }`}
                   disabled={isCurrentPlan || isLoading}
                   onClick={() => handlePlanChange(plan.id)}

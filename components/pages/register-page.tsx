@@ -39,7 +39,7 @@ const subscriptionPlans = [
     features: [
       "Limited content library",
       "SD streaming quality",
-      "Ads included",
+      "No ads",
       "1 device at a time",
       "Basic support",
     ],
@@ -59,7 +59,7 @@ const subscriptionPlans = [
     features: [
       "Full content library",
       "HD streaming quality",
-      "Limited ads",
+      "No ads",
       "2 devices simultaneously",
       "Standard support",
       "5 downloads per month",
@@ -326,7 +326,7 @@ export default function RegisterPage() {
 
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-red-500/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl animate-pulse delay-2000" />
       </div>
@@ -353,7 +353,7 @@ export default function RegisterPage() {
                   <div
                     className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
                       i + 1 <= currentStep
-                        ? "bg-gradient-to-r from-red-600 to-purple-600 text-white shadow-lg"
+                        ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
                         : "bg-gray-700 text-gray-400"
                     }`}
                   >
@@ -362,7 +362,7 @@ export default function RegisterPage() {
                   {i < totalSteps - 1 && (
                     <div
                       className={`w-16 h-1 mx-2 transition-all duration-300 ${
-                        i + 1 < currentStep ? "bg-gradient-to-r from-red-600 to-purple-600" : "bg-gray-700"
+                        i + 1 < currentStep ? "bg-gradient-to-r from-blue-600 to-purple-600" : "bg-gray-700"
                       }`}
                     />
                   )}
@@ -378,7 +378,7 @@ export default function RegisterPage() {
 
           <Card className="bg-black/40 border-white/20 backdrop-blur-xl shadow-2xl rounded-3xl overflow-hidden">
             <CardHeader className="text-center pb-6 pt-8">
-              <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+              <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-white font-bold text-2xl">OTT</span>
               </div>
               <CardTitle className="text-white text-3xl font-bold mb-2">
@@ -408,7 +408,7 @@ export default function RegisterPage() {
                         placeholder="Enter your first name"
                         value={onboardingData.personalInfo.firstName}
                         onChange={(e) => updatePersonalInfo("firstName", e.target.value)}
-                        className="h-12 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-xl text-lg focus:border-red-500 focus:ring-red-500/20 transition-all duration-300"
+                        className="h-12 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-xl text-lg focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300"
                       />
                     </div>
                     <div className="space-y-3">
@@ -417,7 +417,7 @@ export default function RegisterPage() {
                         placeholder="Enter your last name"
                         value={onboardingData.personalInfo.lastName}
                         onChange={(e) => updatePersonalInfo("lastName", e.target.value)}
-                        className="h-12 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-xl text-lg focus:border-red-500 focus:ring-red-500/20 transition-all duration-300"
+                        className="h-12 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-xl text-lg focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300"
                       />
                     </div>
                   </div>
@@ -429,7 +429,7 @@ export default function RegisterPage() {
                       placeholder="Enter your email"
                       value={onboardingData.personalInfo.email}
                       onChange={(e) => updatePersonalInfo("email", e.target.value)}
-                      className="h-12 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-xl text-lg focus:border-red-500 focus:ring-red-500/20 transition-all duration-300"
+                      className="h-12 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-xl text-lg focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300"
                     />
                   </div>
 
@@ -440,7 +440,7 @@ export default function RegisterPage() {
                         placeholder="+263 77 123 4567"
                         value={onboardingData.personalInfo.phone}
                         onChange={(e) => updatePersonalInfo("phone", e.target.value)}
-                        className="h-12 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-xl text-lg focus:border-red-500 focus:ring-red-500/20 transition-all duration-300"
+                        className="h-12 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-xl text-lg focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300"
                       />
                     </div>
                     <div className="space-y-3">
@@ -449,7 +449,7 @@ export default function RegisterPage() {
                         type="date"
                         value={onboardingData.personalInfo.dateOfBirth}
                         onChange={(e) => updatePersonalInfo("dateOfBirth", e.target.value)}
-                        className="h-12 bg-white/10 border-white/20 text-white rounded-xl text-lg focus:border-red-500 focus:ring-red-500/20 transition-all duration-300"
+                        className="h-12 bg-white/10 border-white/20 text-white rounded-xl text-lg focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300"
                       />
                     </div>
                   </div>
@@ -460,7 +460,7 @@ export default function RegisterPage() {
                       <select
                         value={onboardingData.personalInfo.country}
                         onChange={(e) => updatePersonalInfo("country", e.target.value)}
-                        className="w-full h-12 bg-white/10 border border-white/20 text-white rounded-xl px-4 text-lg focus:border-red-500 focus:ring-red-500/20 transition-all duration-300"
+                        className="w-full h-12 bg-white/10 border border-white/20 text-white rounded-xl px-4 text-lg focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300"
                       >
                         <option value="Zimbabwe">Zimbabwe</option>
                         <option value="South Africa">South Africa</option>
@@ -475,7 +475,7 @@ export default function RegisterPage() {
                         placeholder="Enter your city"
                         value={onboardingData.personalInfo.city}
                         onChange={(e) => updatePersonalInfo("city", e.target.value)}
-                        className="h-12 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-xl text-lg focus:border-red-500 focus:ring-red-500/20 transition-all duration-300"
+                        className="h-12 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-xl text-lg focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300"
                       />
                     </div>
                   </div>
@@ -486,7 +486,7 @@ export default function RegisterPage() {
                       placeholder="Tell us a bit about yourself..."
                       value={onboardingData.personalInfo.bio}
                       onChange={(e) => updatePersonalInfo("bio", e.target.value)}
-                      className="bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-xl min-h-[120px] text-lg focus:border-red-500 focus:ring-red-500/20 transition-all duration-300"
+                      className="bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-xl min-h-[120px] text-lg focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300"
                     />
                   </div>
                 </div>
@@ -507,7 +507,7 @@ export default function RegisterPage() {
                           onClick={() => toggleInterest(interest.id)}
                           className={`p-6 rounded-2xl border-2 transition-all duration-300 transform hover:scale-105 ${
                             isSelected
-                              ? "border-red-600 bg-gradient-to-br from-red-600/20 to-purple-600/20 text-white shadow-lg"
+                              ? "border-blue-600 bg-gradient-to-br from-blue-600/20 to-purple-600/20 text-white shadow-lg"
                               : "border-white/20 bg-white/5 text-gray-300 hover:border-white/40 hover:bg-white/10"
                           }`}
                         >
@@ -515,7 +515,7 @@ export default function RegisterPage() {
                             <div className="mb-3">
                               <div
                                 className={`w-12 h-12 rounded-full mx-auto flex items-center justify-center ${
-                                  isSelected ? "bg-gradient-to-r from-red-500 to-purple-600" : "bg-gray-600"
+                                  isSelected ? "bg-gradient-to-r from-blue-500 to-purple-600" : "bg-gray-600"
                                 }`}
                               >
                                 <span className="text-white text-lg">🎭</span>
@@ -542,21 +542,21 @@ export default function RegisterPage() {
                           key={plan.id}
                           className={`relative border-2 rounded-3xl p-6 cursor-pointer transition-all duration-300 transform hover:scale-105 ${
                             isSelected
-                              ? "border-red-600 bg-gradient-to-br from-red-600/10 to-purple-600/10 shadow-xl"
+                              ? "border-blue-600 bg-gradient-to-br from-blue-600/10 to-purple-600/10 shadow-xl"
                               : "border-white/20 bg-white/5 hover:border-white/40 hover:bg-white/10"
-                          } ${plan.popular ? "ring-2 ring-red-600" : ""}`}
+                          } ${plan.popular ? "ring-2 ring-blue-600" : ""}`}
                           onClick={() => handlePlanSelect(plan.id)}
                         >
                           {plan.popular && (
                             <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                              <Badge className="bg-gradient-to-r from-red-600 to-purple-600 text-white px-4 py-1 text-sm">
+                              <Badge className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-1 text-sm">
                                 Most Popular
                               </Badge>
                             </div>
                           )}
 
                           <div className="text-center">
-                            <div className="w-20 h-20 bg-gradient-to-r from-red-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
                               {plan.id === "free" && <Star className="w-10 h-10 text-white" />}
                               {plan.id === "basic" && <Play className="w-10 h-10 text-white" />}
                               {plan.id === "premium" && <Crown className="w-10 h-10 text-white" />}
@@ -581,7 +581,7 @@ export default function RegisterPage() {
 
                           {isSelected && (
                             <div className="absolute top-4 right-4">
-                              <CheckCircle className="w-8 h-8 text-red-600" />
+                              <CheckCircle className="w-8 h-8 text-blue-600" />
                             </div>
                           )}
                         </div>
@@ -596,7 +596,7 @@ export default function RegisterPage() {
                         onClick={() => setOnboardingData((prev) => ({ ...prev, subscriptionPeriod: "monthly" }))}
                         className={`px-8 py-3 rounded-xl transition-all text-lg font-medium ${
                           onboardingData.subscriptionPeriod === "monthly"
-                            ? "bg-gradient-to-r from-red-600 to-purple-600 text-white shadow-lg"
+                            ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
                             : "text-gray-400 hover:text-white"
                         }`}
                       >
@@ -606,7 +606,7 @@ export default function RegisterPage() {
                         onClick={() => setOnboardingData((prev) => ({ ...prev, subscriptionPeriod: "yearly" }))}
                         className={`px-8 py-3 rounded-xl transition-all text-lg font-medium ${
                           onboardingData.subscriptionPeriod === "yearly"
-                            ? "bg-gradient-to-r from-red-600 to-purple-600 text-white shadow-lg"
+                            ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
                             : "text-gray-400 hover:text-white"
                         }`}
                       >
@@ -656,7 +656,7 @@ export default function RegisterPage() {
                               key={method.id}
                               className={`border-2 rounded-2xl p-6 cursor-pointer transition-all duration-300 transform hover:scale-105 ${
                                 isSelected
-                                  ? "border-red-600 bg-gradient-to-br from-red-600/10 to-purple-600/10 shadow-lg"
+                                  ? "border-blue-600 bg-gradient-to-br from-blue-600/10 to-purple-600/10 shadow-lg"
                                   : "border-white/20 bg-white/5 hover:border-white/40 hover:bg-white/10"
                               }`}
                               onClick={() => handlePaymentMethodSelect(method.id)}
@@ -674,7 +674,7 @@ export default function RegisterPage() {
                                   <p className="text-gray-400">{method.description}</p>
                                   <p className="text-green-400 text-sm">{method.fees}</p>
                                 </div>
-                                {isSelected && <CheckCircle className="w-8 h-8 text-red-600" />}
+                                {isSelected && <CheckCircle className="w-8 h-8 text-blue-600" />}
                               </div>
                             </div>
                           )
@@ -717,7 +717,7 @@ export default function RegisterPage() {
                             <Badge
                               key={interestId}
                               variant="secondary"
-                              className="bg-gradient-to-r from-red-600/20 to-purple-600/20 text-red-400 border-red-400/30"
+                              className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 text-blue-400 border-blue-400/30"
                             >
                               {interest?.name}
                             </Badge>
@@ -779,7 +779,7 @@ export default function RegisterPage() {
                 {currentStep < totalSteps ? (
                   <Button
                     onClick={nextStep}
-                    className="bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow-lg"
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow-lg"
                     disabled={
                       (currentStep === 1 &&
                         (!onboardingData.personalInfo.firstName ||
@@ -808,7 +808,7 @@ export default function RegisterPage() {
               <div className="text-center mt-8">
                 <p className="text-gray-300">
                   Already have an account?{" "}
-                  <Link href="/login" className="text-red-400 hover:text-red-300 font-semibold transition-colors">
+                  <Link href="/login" className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">
                     Sign In
                   </Link>
                 </p>

@@ -10,7 +10,16 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { setUser } from "@/store/slices/authSlice"
 import { showSnackbar } from "@/store/slices/uiSlice"
-import { Eye, EyeOff, Loader2, Mail, Lock, ArrowRight } from "lucide-react"
+import {
+  Eye,
+  EyeOff,
+  Loader2,
+  Mail,
+  Lock,
+  ArrowRight,
+  Apple,
+  LogIn,
+} from "lucide-react"
 
 const loginSchema = yup.object({
   email: yup.string().email("Invalid email").required("Email is required"),
@@ -39,7 +48,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true)
 
-    // Simulate API call
+    // Simulated API call
     setTimeout(() => {
       const mockUser = {
         id: "1",
@@ -54,22 +63,29 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
 
       dispatch(setUser(mockUser))
       dispatch(showSnackbar({ message: "Welcome back! Login successful", type: "success" }))
-
-      // Store in localStorage
       localStorage.setItem("authToken", "mock-jwt-token")
       localStorage.setItem("userData", JSON.stringify(mockUser))
-
       setIsLoading(false)
       onSuccess?.()
     }, 1500)
   }
 
+  // Placeholder auth handlers
+  const handleGoogleLogin = () => {
+    console.log("Google login triggered")
+    dispatch(showSnackbar({ message: "Google login not implemented", type: "info" }))
+  }
+
+  const handleAppleLogin = () => {
+    console.log("Apple login triggered")
+    dispatch(showSnackbar({ message: "Apple login not implemented", type: "info" }))
+  }
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {/* Email Input */}
       <div className="space-y-2">
-        <Label htmlFor="email" className="text-white font-medium">
-          Email Address
-        </Label>
+        <Label htmlFor="email" className="text-white font-medium">Email Address</Label>
         <div className="relative">
           <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <Input
@@ -88,10 +104,9 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         )}
       </div>
 
+      {/* Password Input */}
       <div className="space-y-2">
-        <Label htmlFor="password" className="text-white font-medium">
-          Password
-        </Label>
+        <Label htmlFor="password" className="text-white font-medium">Password</Label>
         <div className="relative">
           <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <Input
@@ -119,6 +134,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         )}
       </div>
 
+      {/* Remember Me and Forgot Password */}
       <div className="flex items-center justify-between">
         <label className="flex items-center space-x-2 cursor-pointer">
           <input
@@ -132,6 +148,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         </button>
       </div>
 
+      {/* Submit Button */}
       <Button
         type="submit"
         className="w-full h-12 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
@@ -149,6 +166,37 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
           </>
         )}
       </Button>
+
+      {/* Divider */}
+      <div className="relative my-4">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-gray-700" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="bg-black px-2 text-gray-400">Or continue with</span>
+        </div>
+      </div>
+
+      {/* Social Login Buttons */}
+      <div className="space-y-3">
+        <Button
+          type="button"
+          onClick={handleGoogleLogin}
+          className="w-full h-12 bg-white text-gray-800 hover:bg-gray-100 font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-3"
+        >
+          <img src="/google-icon.svg" alt="Google" className="w-5 h-5" />
+          Continue with Google
+        </Button>
+
+        <Button
+          type="button"
+          onClick={handleAppleLogin}
+          className="w-full h-12 bg-black text-white hover:bg-gray-900 font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-3"
+        >
+          <Apple className="w-5 h-5" />
+          Continue with Apple
+        </Button>
+      </div>
     </form>
   )
 }

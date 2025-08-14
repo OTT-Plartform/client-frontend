@@ -282,7 +282,7 @@ export default function OnboardingPage() {
       dispatch(setUser(mockUser))
       dispatch(
         showSnackbar({
-          message: `Welcome to OTT Streaming! Your ${selectedPlanData?.name} plan is now active.`,
+          message: `Welcome to Afristream! Your ${selectedPlanData?.name} plan is now active.`,
           type: "success",
         }),
       )
@@ -324,13 +324,13 @@ export default function OnboardingPage() {
                 <div key={i} className="flex items-center">
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      i + 1 <= currentStep ? "bg-red-600 text-white" : "bg-gray-700 text-gray-400"
+                      i + 1 <= currentStep ? "bg-blue-600 text-white" : "bg-gray-700 text-gray-400"
                     }`}
                   >
                     {i + 1 < currentStep ? <Check className="w-5 h-5" /> : getStepIcon(i + 1)}
                   </div>
                   {i < totalSteps - 1 && (
-                    <div className={`w-16 h-1 mx-2 ${i + 1 < currentStep ? "bg-red-600" : "bg-gray-700"}`} />
+                    <div className={`w-16 h-1 mx-2 ${i + 1 < currentStep ? "bg-blue-600" : "bg-gray-700"}`} />
                   )}
                 </div>
               ))}
@@ -470,7 +470,7 @@ export default function OnboardingPage() {
                           onClick={() => toggleInterest(interest.id)}
                           className={`p-4 rounded-xl border-2 transition-all duration-200 ${
                             isSelected
-                              ? "border-red-600 bg-red-600/20 text-white"
+                              ? "border-blue-600 bg-blue-600/20 text-white"
                               : "border-gray-700 bg-gray-800/50 text-gray-300 hover:border-gray-600"
                           }`}
                         >
@@ -502,19 +502,19 @@ export default function OnboardingPage() {
                           key={plan.id}
                           className={`relative border-2 rounded-2xl p-6 cursor-pointer transition-all duration-200 ${
                             isSelected
-                              ? "border-red-600 bg-red-600/10"
+                              ? "border-blue-600 bg-blue-600/10"
                               : "border-gray-700 bg-gray-800/50 hover:border-gray-600"
-                          } ${plan.popular ? "ring-2 ring-red-600" : ""}`}
+                          } ${plan.popular ? "ring-2 ring-blue-600" : ""}`}
                           onClick={() => handlePlanSelect(plan.id)}
                         >
                           {plan.popular && (
                             <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                              <Badge className="bg-red-600 text-white">Most Popular</Badge>
+                              <Badge className="bg-blue-600 text-white">Most Popular</Badge>
                             </div>
                           )}
 
                           <div className="text-center">
-                            <div className="w-16 h-16 bg-gradient-to-r from-red-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
                               {plan.id === "free" && <Star className="w-8 h-8 text-white" />}
                               {plan.id === "basic" && <Play className="w-8 h-8 text-white" />}
                               {plan.id === "premium" && <Crown className="w-8 h-8 text-white" />}
@@ -539,7 +539,7 @@ export default function OnboardingPage() {
 
                           {isSelected && (
                             <div className="absolute top-4 right-4">
-                              <CheckCircle className="w-6 h-6 text-red-600" />
+                              <CheckCircle className="w-6 h-6 text-blue-600" />
                             </div>
                           )}
                         </div>
@@ -554,7 +554,7 @@ export default function OnboardingPage() {
                         onClick={() => setOnboardingData((prev) => ({ ...prev, subscriptionPeriod: "monthly" }))}
                         className={`px-6 py-2 rounded-lg transition-all ${
                           onboardingData.subscriptionPeriod === "monthly"
-                            ? "bg-red-600 text-white"
+                            ? "bg-blue-600 text-white"
                             : "text-gray-400 hover:text-white"
                         }`}
                       >
@@ -564,7 +564,7 @@ export default function OnboardingPage() {
                         onClick={() => setOnboardingData((prev) => ({ ...prev, subscriptionPeriod: "yearly" }))}
                         className={`px-6 py-2 rounded-lg transition-all ${
                           onboardingData.subscriptionPeriod === "yearly"
-                            ? "bg-red-600 text-white"
+                            ? "bg-blue-600 text-white"
                             : "text-gray-400 hover:text-white"
                         }`}
                       >
@@ -614,7 +614,7 @@ export default function OnboardingPage() {
                               key={method.id}
                               className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-200 ${
                                 isSelected
-                                  ? "border-red-600 bg-red-600/10"
+                                  ? "border-blue-600 bg-blue-600/10"
                                   : "border-gray-700 bg-gray-800/50 hover:border-gray-600"
                               }`}
                               onClick={() => handlePaymentMethodSelect(method.id)}
@@ -632,7 +632,7 @@ export default function OnboardingPage() {
                                   <p className="text-gray-400 text-sm">{method.description}</p>
                                   <p className="text-green-400 text-xs">{method.fees}</p>
                                 </div>
-                                {isSelected && <CheckCircle className="w-6 h-6 text-red-600" />}
+                                {isSelected && <CheckCircle className="w-6 h-6 text-blue-600" />}
                               </div>
                             </div>
                           )
@@ -670,7 +670,7 @@ export default function OnboardingPage() {
                         {onboardingData.interests.map((interestId) => {
                           const interest = interests.find((i) => i.id === interestId)
                           return (
-                            <Badge key={interestId} variant="secondary" className="bg-red-600/20 text-red-400">
+                            <Badge key={interestId} variant="secondary" className="bg-blue-600/20 text-blue-400">
                               {interest?.name}
                             </Badge>
                           )
@@ -720,7 +720,7 @@ export default function OnboardingPage() {
                 {currentStep < totalSteps ? (
                   <Button
                     onClick={nextStep}
-                    className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white"
+                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
                     disabled={
                       (currentStep === 1 &&
                         (!onboardingData.personalInfo.firstName ||

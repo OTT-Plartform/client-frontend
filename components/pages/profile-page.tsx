@@ -14,33 +14,42 @@ export default function ProfilePage() {
   const { user } = useSelector((state: RootState) => state.auth)
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-blue-900 text-blue-100">
       <Header />
       <div className="container mx-auto px-4 py-8 pt-20">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8">Account Settings</h1>
+          <h1 className="text-3xl font-bold mb-8 text-blue-200">Account Settings</h1>
 
           <Tabs defaultValue="profile" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 bg-gray-800">
-              <TabsTrigger value="profile" className="flex items-center gap-2">
+            <TabsList className="grid w-full grid-cols-3 bg-blue-800 rounded-md">
+              <TabsTrigger
+                value="profile"
+                className="flex items-center gap-2 text-blue-100 data-[state=active]:bg-blue-700 data-[state=active]:text-white rounded-md"
+              >
                 <User className="w-4 h-4" />
                 Profile
               </TabsTrigger>
-              <TabsTrigger value="payment" className="flex items-center gap-2">
+              <TabsTrigger
+                value="payment"
+                className="flex items-center gap-2 text-blue-100 data-[state=active]:bg-blue-700 data-[state=active]:text-white rounded-md"
+              >
                 <CreditCard className="w-4 h-4" />
                 Payment
               </TabsTrigger>
-              <TabsTrigger value="subscription" className="flex items-center gap-2">
+              <TabsTrigger
+                value="subscription"
+                className="flex items-center gap-2 text-blue-100 data-[state=active]:bg-blue-700 data-[state=active]:text-white rounded-md"
+              >
                 <Crown className="w-4 h-4" />
                 Subscription
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="profile" className="mt-6">
-              <Card className="bg-gray-900 border-gray-800">
+              <Card className="bg-blue-800 border-blue-700">
                 <CardHeader>
-                  <CardTitle className="text-white">Profile Information</CardTitle>
-                  <CardDescription className="text-gray-400">
+                  <CardTitle className="text-blue-100">Profile Information</CardTitle>
+                  <CardDescription className="text-blue-300">
                     Update your personal information and preferences
                   </CardDescription>
                 </CardHeader>

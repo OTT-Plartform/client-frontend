@@ -84,7 +84,7 @@ export default function SeriesDetailPage({ seriesId }: SeriesDetailPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-blue-950 text-blue-100">
       <Header />
 
       {/* Hero Section */}
@@ -100,7 +100,7 @@ export default function SeriesDetailPage({ seriesId }: SeriesDetailPageProps) {
             <div className="max-w-3xl">
               {/* Series Badge */}
               <div className="flex items-center gap-2 mb-4">
-                <Badge className="bg-red-600 text-white">
+                <Badge className="bg-blue-600 text-blue">
                   {series.type === "series" ? "TV Series" : series.type === "podcast" ? "Podcast" : "Show"}
                 </Badge>
                 {series.isAfrican && (

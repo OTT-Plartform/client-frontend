@@ -46,34 +46,33 @@ export default function ProfileForm() {
   const onSubmit = async (data: ProfileFormData) => {
     setIsLoading(true)
 
-    // Simulate API call
     setTimeout(() => {
       dispatch(updateUser(data))
       dispatch(showSnackbar({ message: "Profile updated successfully!", type: "success" }))
-
-      // Update localStorage
       const updatedUser = { ...user, ...data }
       localStorage.setItem("userData", JSON.stringify(updatedUser))
-
       setIsLoading(false)
     }, 1000)
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-gray-900/80 rounded-xl shadow-lg p-6 md:p-10 backdrop-blur-md">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="space-y-6 bg-gray-900/80 rounded-xl shadow-lg p-6 md:p-10 backdrop-blur-md"
+    >
       {/* Avatar Section */}
       <div className="flex items-center gap-6">
         <div className="relative">
           <Avatar className="w-20 h-20">
             <AvatarImage src={user?.avatar || "/placeholder.svg"} alt={user?.name} />
-            <AvatarFallback className="bg-red-600 text-white text-xl">
+            <AvatarFallback className="bg-blue-600 text-white text-xl">
               {user?.name?.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <Button
             type="button"
             size="icon"
-            className="absolute -bottom-2 -right-2 bg-red-600 hover:bg-red-700 rounded-full w-8 h-8"
+            className="absolute -bottom-2 -right-2 bg-blue-600 hover:bg-blue-700 rounded-full w-8 h-8"
           >
             <Camera className="w-4 h-4" />
           </Button>
@@ -141,7 +140,11 @@ export default function ProfileForm() {
       </div>
 
       <div className="flex justify-end">
-        <Button type="submit" className="bg-red-600 hover:bg-red-700 text-white" disabled={isLoading}>
+        <Button
+          type="submit"
+          className="bg-blue-600 hover:bg-blue-700 text-white"
+          disabled={isLoading}
+        >
           {isLoading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />

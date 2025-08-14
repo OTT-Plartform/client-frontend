@@ -26,51 +26,63 @@ export default function HomePage() {
   }, [dispatch])
 
   const handleVideoSelect = (video: any) => {
-    // Check if content requires authentication
     if (video.isPremium && !isAuthenticated) {
       setShowAuthModal(true)
       return
     }
-
     setSelectedVideo(video)
   }
 
   const handleAuthSuccess = () => {
     setShowAuthModal(false)
-    // If there was a selected video waiting, play it now
-    if (selectedVideo) {
-      // Video will play since user is now authenticated
-    }
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-blue-950 text-blue-100">
       <Header />
       <main>
         <HeroSection onPlayVideo={handleVideoSelect} />
-        <div className="px-4 md:px-8 lg:px-12 space-y-8 pb-20 pt-20">
-          <ContentRow title="Trending Now" content={trending} onVideoSelect={handleVideoSelect} />
-          <ContentRow title="Recommended for You" content={recommended} onVideoSelect={handleVideoSelect} />
+
+        {/* Thumbnail-focused content sections with horizontal scroll and arrows */}
+        <div className="px-2 md:px-4 lg:px-6 space-y-6 pb-10 pt-10">
           <ContentRow
-            title="Popular Movies"
+            title="Trending"
+            titleClass="text-lg font-semibold text-blue-100"
+            content={trending}
+            onVideoSelect={handleVideoSelect}
+          />
+          <ContentRow
+            title="Recommended"
+            titleClass="text-lg font-semibold text-blue-100"
+            content={recommended}
+            onVideoSelect={handleVideoSelect}
+          />
+          <ContentRow
+            title="Movies"
+            titleClass="text-lg font-semibold text-blue-100"
             content={content.filter((item) => item.type === "movie")}
             onVideoSelect={handleVideoSelect}
           />
           <ContentRow
-            title="TV Series"
+            title="Series"
+            titleClass="text-lg font-semibold text-blue-100"
             content={content.filter((item) => item.type === "series")}
             onVideoSelect={handleVideoSelect}
           />
         </div>
       </main>
 
-      {/* Video Modal - only show if authenticated or content is free */}
+      {/* Modals */}
       {selectedVideo && (isAuthenticated || !selectedVideo.isPremium) && (
         <VideoModal video={selectedVideo} onClose={() => setSelectedVideo(null)} />
       )}
 
-      {/* Auth Modal - show when trying to access premium content */}
-      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} onAuthSuccess={handleAuthSuccess} />}
+      {showAuthModal && (
+        <AuthModal
+          onClose={() => setShowAuthModal(false)}
+          onAuthSuccess={handleAuthSuccess}
+        />
+      )}
     </div>
   )
 }

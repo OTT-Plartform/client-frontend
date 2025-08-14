@@ -23,14 +23,12 @@ export default function SeriesPage() {
   })
 
   useEffect(() => {
-    // Load series data
     dispatch(setContent(mockSeries))
   }, [dispatch])
 
   const filteredSeries = useMemo(() => {
     let filtered = mockSeries.filter((series) => series.type === "series")
 
-    // Apply search filter
     if (filters.searchQuery) {
       filtered = filtered.filter(
         (series) =>
@@ -39,12 +37,10 @@ export default function SeriesPage() {
       )
     }
 
-    // Apply genre filter
     if (filters.genre !== "all") {
       filtered = filtered.filter((series) => series.genres?.includes(filters.genre) || series.genre === filters.genre)
     }
 
-    // Apply year filter
     if (filters.year !== "all") {
       const yearRange = filters.year.split("-")
       if (yearRange.length === 2) {
@@ -56,12 +52,10 @@ export default function SeriesPage() {
       }
     }
 
-    // Apply rating filter
     if (filters.rating !== "all") {
       filtered = filtered.filter((series) => series.rating === filters.rating)
     }
 
-    // Apply sorting
     switch (filters.sortBy) {
       case "title":
         filtered.sort((a, b) => a.title.localeCompare(b.title))
@@ -72,7 +66,7 @@ export default function SeriesPage() {
       case "rating":
         filtered.sort((a, b) => b.match - a.match)
         break
-      default: // popularity
+      default:
         filtered.sort((a, b) => b.match - a.match)
     }
 
@@ -80,12 +74,12 @@ export default function SeriesPage() {
   }, [filters])
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-blue-950 text-blue-100">
       <Header />
       <div className="pt-20 px-4 md:px-8 lg:px-12">
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">TV Shows</h1>
-          <p className="text-gray-400">Explore our extensive collection of TV series</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-blue-500 mb-2">TV Shows</h1>
+          <p className="text-blue-400">Explore our extensive collection of TV series</p>
         </div>
 
         <ContentFilters
