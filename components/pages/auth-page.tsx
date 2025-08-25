@@ -31,7 +31,7 @@ export default function AuthPage() {
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-blue-100 mb-2">Afristream</h1>
+            <h1 className="text-4xl font-bold text-blue-100 mb-2">ZIMUSHA</h1>
             <p className="text-blue-300">Your gateway to African entertainment</p>
           </div>
 

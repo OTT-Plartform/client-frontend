@@ -8,6 +8,7 @@ import Header from "@/components/layout/header"
 import HeroSection from "@/components/sections/hero-section"
 import ContentRow from "@/components/sections/content-row"
 import VideoModal from "@/components/modals/video-modal"
+import EpisodesSection from "@/components/sections/episodes-section"
 import AuthModal from "@/components/modals/auth-modal"
 import { mockContent, mockTrending, mockRecommended } from "@/lib/mock-data"
 
@@ -15,8 +16,10 @@ export default function HomePage() {
   const dispatch = useDispatch()
   const { content, trending, recommended } = useSelector((state: RootState) => state.content)
   const { isAuthenticated } = useSelector((state: RootState) => state.auth)
+
   const [selectedVideo, setSelectedVideo] = useState<any>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [selectedSeries, setSelectedSeries] = useState<any>(null) // for episodes modal
 
   useEffect(() => {
     // Simulate API calls
@@ -37,52 +40,78 @@ export default function HomePage() {
     setShowAuthModal(false)
   }
 
+  const handleShowEpisodes = (series: any) => {
+    setSelectedSeries(series)
+  }
+
   return (
-    <div className="min-h-screen bg-blue-950 text-blue-100">
+    <div className="min-h-screen bg-gradient-to-b from-blue-950 via-blue-900 to-black text-blue-100">
+      {/* Sticky header with blur */}
       <Header />
+
       <main>
+        {/* Hero section */}
         <HeroSection onPlayVideo={handleVideoSelect} />
 
-        {/* Thumbnail-focused content sections with horizontal scroll and arrows */}
-        <div className="px-2 md:px-4 lg:px-6 space-y-6 pb-10 pt-10">
+        {/* Modern content rows */}
+        <div className="px-2 md:px-6 space-y-10 pb-20 pt-10">
           <ContentRow
-            title="Trending"
-            titleClass="text-lg font-semibold text-blue-100"
+            title="🔥 Trending Now"
+            titleClass="text-2xl font-bold text-blue-100 mb-4"
             content={trending}
             onVideoSelect={handleVideoSelect}
+            onShowEpisodes={handleShowEpisodes}
           />
           <ContentRow
-            title="Recommended"
-            titleClass="text-lg font-semibold text-blue-100"
+            title="⭐ Recommended For You"
+            titleClass="text-2xl font-bold text-blue-100 mb-4"
             content={recommended}
             onVideoSelect={handleVideoSelect}
+            onShowEpisodes={handleShowEpisodes}
           />
           <ContentRow
-            title="Movies"
-            titleClass="text-lg font-semibold text-blue-100"
+            title="🎬 Movies"
+            titleClass="text-2xl font-bold text-blue-100 mb-4"
             content={content.filter((item) => item.type === "movie")}
             onVideoSelect={handleVideoSelect}
           />
           <ContentRow
-            title="Series"
-            titleClass="text-lg font-semibold text-blue-100"
+            title="📺 Series"
+            titleClass="text-2xl font-bold text-blue-100 mb-4"
             content={content.filter((item) => item.type === "series")}
             onVideoSelect={handleVideoSelect}
+            onShowEpisodes={handleShowEpisodes}
           />
         </div>
       </main>
 
-      {/* Modals */}
+      {/* Video Modal */}
       {selectedVideo && (isAuthenticated || !selectedVideo.isPremium) && (
-        <VideoModal video={selectedVideo} onClose={() => setSelectedVideo(null)} />
+        <VideoModal
+          video={selectedVideo}
+          onClose={() => setSelectedVideo(null)}
+        />
       )}
 
+      {/* Auth Modal */}
       {showAuthModal && (
         <AuthModal
           onClose={() => setShowAuthModal(false)}
           onAuthSuccess={handleAuthSuccess}
         />
       )}
+
+      {/* Episodes Modal */}
+      {selectedSeries && (
+  <div className="px-2 md:px-6">
+    <EpisodesSection
+      series={selectedSeries}
+      onClose={() => setSelectedSeries(null)}
+      onPlayEpisode={handleVideoSelect}
+    />
+  </div>
+)}
+
     </div>
   )
 }

@@ -5,6 +5,7 @@ import { useSelector, useDispatch } from "react-redux"
 import type { RootState } from "@/store/store"
 import { setUser } from "@/store/slices/authSlice"
 import HomePage from "@/components/pages/home-page"
+import WelcomePage from "@/components/pages/welcome-page" // new component
 
 export default function Home() {
   const dispatch = useDispatch()
@@ -24,7 +25,7 @@ export default function Home() {
     setIsLoading(false)
   }, [dispatch])
 
-  // Show loading state while checking authentication
+  // Loading screen
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -33,6 +34,11 @@ export default function Home() {
     )
   }
 
-  // Always show home page - authentication is handled per content
-  return <HomePage />
+  // If authenticated → show HomePage
+  if (isAuthenticated) {
+    return <HomePage />
+  }
+
+  // If not authenticated → show WelcomePage
+  return <WelcomePage />
 }

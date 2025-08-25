@@ -287,7 +287,7 @@ export default function RegisterPage() {
       dispatch(setUser(mockUser))
       dispatch(
         showSnackbar({
-          message: `Welcome to OTT Streaming! Your ${selectedPlanData?.name} plan is now active.`,
+          message: `Welcome to ZIMUSHA! Your ${selectedPlanData?.name} plan is now active.`,
           type: "success",
         }),
       )
@@ -379,7 +379,7 @@ export default function RegisterPage() {
           <Card className="bg-black/40 border-white/20 backdrop-blur-xl shadow-2xl rounded-3xl overflow-hidden">
             <CardHeader className="text-center pb-6 pt-8">
               <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-white font-bold text-2xl">OTT</span>
+                <span className="text-white font-bold text-2xl">ZIMUSHA</span>
               </div>
               <CardTitle className="text-white text-3xl font-bold mb-2">
                 {currentStep === 1 && "Personal Information"}

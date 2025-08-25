@@ -282,7 +282,7 @@ export default function OnboardingPage() {
       dispatch(setUser(mockUser))
       dispatch(
         showSnackbar({
-          message: `Welcome to Afristream! Your ${selectedPlanData?.name} plan is now active.`,
+          message: `Welcome to ZIMUSHA! Your ${selectedPlanData?.name} plan is now active.`,
           type: "success",
         }),
       )

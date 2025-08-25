@@ -48,7 +48,7 @@ export default function Header() {
           {/* Logo and Navigation */}
           <div className="flex items-center space-x-8">
             <Link href="/" className="text-2xl font-bold text-blue-400 hover:text-blue-200 transition-colors">
-              AfriStream
+              ZIMUSHA
             </Link>
             <nav className="hidden md:flex items-center space-x-6">
               <Link
