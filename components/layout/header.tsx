@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Search, Bell, User, Settings, LogOut, Home, Film, Tv, UserPlus, ChevronDown } from "lucide-react"
 import Link from "next/link"
+import { clearStoredTokens } from "@/lib/auth"
 
 export default function Header() {
   const dispatch = useDispatch()
@@ -27,7 +28,7 @@ export default function Header() {
 
   const handleLogout = () => {
     dispatch(logout())
-    localStorage.removeItem("authToken")
+    clearStoredTokens()
     localStorage.removeItem("userData")
   }
 

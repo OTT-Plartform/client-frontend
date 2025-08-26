@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useDispatch } from "react-redux"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -173,8 +173,8 @@ const interests = [
   { id: "thriller", name: "Thriller", icon: "Eye" },
   { id: "documentary", name: "Documentary", icon: "Camera" },
   { id: "music", name: "Music", icon: "Music" },
-  { id: "talk-show", name: "Talk Shows", icon: "Mic" },
-  { id: "podcast", name: "Podcasts", icon: "Headphones" },
+  { id: "talk-shows", name: "Talk Shows", icon: "Mic" },
+  { id: "podcasts", name: "Podcasts", icon: "Headphones" },
   { id: "spiritual", name: "Spiritual", icon: "Church" },
   { id: "cultural", name: "Cultural", icon: "Globe" },
   { id: "educational", name: "Educational", icon: "BookOpen" },
@@ -201,6 +201,7 @@ export default function OnboardingPage() {
   const dispatch = useDispatch()
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
+  const [sessionId, setSessionId] = useState<string | null>(null)
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
     personalInfo: {
       firstName: "",
@@ -217,6 +218,34 @@ export default function OnboardingPage() {
     paymentMethod: "",
     subscriptionPeriod: "monthly",
   })
+  const [backendPlans, setBackendPlans] = useState<any[] | null>(null)
+  const [selectedBackendPlanId, setSelectedBackendPlanId] = useState<number | null>(null)
+  const [accountPassword, setAccountPassword] = useState("")
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const { api } = await import("@/lib/api")
+        const plans = await api.onboardingGetPlans()
+        setBackendPlans(plans)
+        // Initialize mapping to backend plan id
+        if (plans && plans.length > 0) {
+          const localName = subscriptionPlans.find((p) => p.id === onboardingData.selectedPlan)?.name
+          const match = plans.find((bp: any) => `${bp.name}`.toLowerCase() === `${localName}`.toLowerCase())
+          setSelectedBackendPlanId(match ? match.id : plans[0].id)
+        }
+      } catch (_) {
+        // ignore, fallback to static plans
+      }
+    })()
+  }, [])
+
+  useEffect(() => {
+    if (!backendPlans || backendPlans.length === 0) return
+    const localName = subscriptionPlans.find((p) => p.id === onboardingData.selectedPlan)?.name
+    const match = backendPlans.find((bp: any) => `${bp.name}`.toLowerCase() === `${localName}`.toLowerCase())
+    setSelectedBackendPlanId(match ? match.id : backendPlans[0].id)
+  }, [onboardingData.selectedPlan, backendPlans])
 
   const totalSteps = 5
 
@@ -258,44 +287,64 @@ export default function OnboardingPage() {
 
   const completeOnboarding = async () => {
     setIsLoading(true)
-
-    // Simulate API call
-    setTimeout(() => {
-      const selectedPlanData = subscriptionPlans.find((p) => p.id === onboardingData.selectedPlan)
-
-      const mockUser = {
-        id: "1",
-        name: `${onboardingData.personalInfo.firstName} ${onboardingData.personalInfo.lastName}`,
-        email: onboardingData.personalInfo.email,
-        phone: onboardingData.personalInfo.phone,
-        avatar: "/placeholder.svg?height=40&width=40",
-        subscription: selectedPlanData?.name || "Free",
-        country: onboardingData.personalInfo.country,
-        city: onboardingData.personalInfo.city,
-        bio: onboardingData.personalInfo.bio,
-        interests: onboardingData.interests,
-        plan: selectedPlanData,
-        paymentMethod: onboardingData.paymentMethod,
-        needsOnboarding: false, // Mark as completed
+    try {
+      const { api } = await import("@/lib/api")
+      // Step 1: start session if not started
+      let currentSessionId = sessionId
+      if (!currentSessionId) {
+        const s1 = await api.onboardingStep1Personal({
+          firstName: onboardingData.personalInfo.firstName,
+          lastName: onboardingData.personalInfo.lastName,
+          email: onboardingData.personalInfo.email,
+          phoneNumber: onboardingData.personalInfo.phone,
+          dateOfBirth: onboardingData.personalInfo.dateOfBirth || undefined,
+          country: onboardingData.personalInfo.country,
+          city: onboardingData.personalInfo.city,
+          bio: onboardingData.personalInfo.bio || undefined,
+        })
+        currentSessionId = s1.sessionId
+        setSessionId(currentSessionId)
       }
 
-      dispatch(setUser(mockUser))
-      dispatch(
-        showSnackbar({
-          message: `Welcome to ZIMUSHA! Your ${selectedPlanData?.name} plan is now active.`,
-          type: "success",
-        }),
-      )
+      if (!currentSessionId) throw new Error("No onboarding session")
 
-      // Store in localStorage
-      localStorage.setItem("authToken", "mock-jwt-token")
-      localStorage.setItem("userData", JSON.stringify(mockUser))
-
-      setIsLoading(false)
-
-      // Force page reload to show home page
+      // Step 2: interests
+      await api.onboardingStep2Interests(currentSessionId, { selectedGenres: onboardingData.interests })
+      // Step 3: plan
+      const selectedPlanData = subscriptionPlans.find((p) => p.id === onboardingData.selectedPlan)
+      const backendPlanId = selectedBackendPlanId ?? (backendPlans && backendPlans[0]?.id)
+      await api.onboardingStep3Plan(currentSessionId, {
+        planId: backendPlanId ?? undefined,
+        billingCycle: onboardingData.subscriptionPeriod,
+      })
+      // Step 4: payment
+      await api.onboardingStep4Payment(currentSessionId, {
+        paymentMethodId: onboardingData.paymentMethod || undefined,
+      })
+      // Step 5: complete with chosen password
+      const auth = await api.onboardingStep5Complete(currentSessionId, { password: accountPassword || "Temp#Pass123" })
+      dispatch(setUser(auth.user))
+      localStorage.setItem("userData", JSON.stringify(auth.user))
+      dispatch(showSnackbar({ message: `Welcome to ZIMUSHA!`, type: "success" }))
       window.location.href = "/"
-    }, 2000)
+    } catch (e: any) {
+      let message = "Onboarding failed"
+      const raw = e?.message ?? ""
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw)
+          const serverMsg = Array.isArray(parsed?.message)
+            ? parsed.message.join(", ")
+            : parsed?.message || parsed?.error
+          if (serverMsg) message = serverMsg
+        } catch {
+          message = raw
+        }
+      }
+      dispatch(showSnackbar({ message, type: "error" }))
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const getStepIcon = (step: number) => {
@@ -701,6 +750,18 @@ export default function OnboardingPage() {
                         <p className="text-gray-400 text-sm">{selectedPayment?.description}</p>
                       </div>
                     )}
+
+                    <div className="bg-gray-800/50 rounded-xl p-4">
+                      <h4 className="text-white font-semibold mb-2">Set Account Password</h4>
+                      <p className="text-gray-400 text-sm mb-2">Minimum 8 characters</p>
+                      <input
+                        type="password"
+                        value={accountPassword}
+                        onChange={(e) => setAccountPassword(e.target.value)}
+                        className="w-full h-12 bg-gray-900 border border-gray-700 rounded-xl px-3 text-white"
+                        placeholder="Create a password"
+                      />
+                    </div>
                   </div>
                 </div>
               )}
@@ -736,7 +797,7 @@ export default function OnboardingPage() {
                 ) : (
                   <Button
                     onClick={completeOnboarding}
-                    disabled={isLoading}
+                    disabled={isLoading || accountPassword.length < 8}
                     className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
                   >
                     {isLoading ? "Setting up..." : "Complete Setup"}

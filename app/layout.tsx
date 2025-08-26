@@ -4,6 +4,7 @@ import { Nunito } from "next/font/google"
 import "./globals.css"
 import { ReduxProvider } from "@/store/provider"
 import Snackbar from "@/components/ui/snackbar"
+import AuthBootstrap from "@/components/auth-bootstrap"
 
 const nunito = Nunito({ subsets: ["latin"] })
 
@@ -22,6 +23,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={nunito.className}>
         <ReduxProvider>          
+          <AuthBootstrap />
           {children}
           <Snackbar />
         </ReduxProvider>

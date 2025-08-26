@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useDispatch } from "react-redux"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -205,6 +205,7 @@ export default function RegisterPage() {
   const dispatch = useDispatch()
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
+  const [sessionId, setSessionId] = useState<string | null>(null)
   const [onboardingData, setOnboardingData] = useState<OnboardingData>({
     personalInfo: {
       firstName: "",
@@ -221,6 +222,20 @@ export default function RegisterPage() {
     paymentMethod: "",
     subscriptionPeriod: "monthly",
   })
+  const [backendPlans, setBackendPlans] = useState<any[] | null>(null)
+  const [accountPassword, setAccountPassword] = useState("")
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const { api } = await import("@/lib/api")
+        const plans = await api.onboardingGetPlans()
+        setBackendPlans(plans)
+      } catch (_) {
+        // ignore, fallback to local static plans
+      }
+    })()
+  }, [])
 
   const totalSteps = 5
 
@@ -262,45 +277,64 @@ export default function RegisterPage() {
 
   const completeOnboarding = async () => {
     setIsLoading(true)
-
-    // Simulate API call
-    setTimeout(() => {
-      const selectedPlanData = subscriptionPlans.find((p) => p.id === onboardingData.selectedPlan)
-
-      const mockUser = {
-        id: "1",
-        name: `${onboardingData.personalInfo.firstName} ${onboardingData.personalInfo.lastName}`,
-        email: onboardingData.personalInfo.email,
-        phone: onboardingData.personalInfo.phone,
-        avatar:
-          "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=100&q=80",
-        subscription: selectedPlanData?.name || "Free",
-        country: onboardingData.personalInfo.country,
-        city: onboardingData.personalInfo.city,
-        bio: onboardingData.personalInfo.bio,
-        interests: onboardingData.interests,
-        plan: selectedPlanData,
-        paymentMethod: onboardingData.paymentMethod,
-        needsOnboarding: false, // Mark as completed
+    try {
+      const { api } = await import("@/lib/api")
+      // Step 1: start session if not started
+      let currentSessionId = sessionId
+      if (!currentSessionId) {
+        const s1 = await api.onboardingStep1Personal({
+          firstName: onboardingData.personalInfo.firstName,
+          lastName: onboardingData.personalInfo.lastName,
+          email: onboardingData.personalInfo.email,
+          phoneNumber: onboardingData.personalInfo.phone,
+          dateOfBirth: onboardingData.personalInfo.dateOfBirth || undefined,
+          country: onboardingData.personalInfo.country,
+          city: onboardingData.personalInfo.city,
+          bio: onboardingData.personalInfo.bio || undefined,
+        })
+        currentSessionId = s1.sessionId
+        setSessionId(currentSessionId)
       }
 
-      dispatch(setUser(mockUser))
-      dispatch(
-        showSnackbar({
-          message: `Welcome to ZIMUSHA! Your ${selectedPlanData?.name} plan is now active.`,
-          type: "success",
-        }),
-      )
+      if (!currentSessionId) throw new Error("No onboarding session")
 
-      // Store in localStorage
-      localStorage.setItem("authToken", "mock-jwt-token")
-      localStorage.setItem("userData", JSON.stringify(mockUser))
-
-      setIsLoading(false)
-
-      // Redirect to home
+      // Step 2: interests
+      await api.onboardingStep2Interests(currentSessionId, { selectedGenres: onboardingData.interests })
+      // Step 3: plan
+      const selectedPlanData = subscriptionPlans.find((p) => p.id === onboardingData.selectedPlan)
+      const backendPlanId = backendPlans?.find((bp) => bp.name?.toLowerCase() === selectedPlanData?.name?.toLowerCase())?.id
+      await api.onboardingStep3Plan(currentSessionId, {
+        planId: backendPlanId ?? undefined,
+        billingCycle: onboardingData.subscriptionPeriod,
+      })
+      // Step 4: payment
+      await api.onboardingStep4Payment(currentSessionId, {
+        paymentMethodId: onboardingData.paymentMethod || undefined,
+      })
+      // Step 5: complete
+      const auth = await api.onboardingStep5Complete(currentSessionId, { password: accountPassword || "Temp#Pass123" })
+      dispatch(setUser(auth.user))
+      localStorage.setItem("userData", JSON.stringify(auth.user))
+      dispatch(showSnackbar({ message: `Welcome to ZIMUSHA!`, type: "success" }))
       router.push("/")
-    }, 2000)
+    } catch (e: any) {
+      let message = "Onboarding failed"
+      const raw = e?.message ?? ""
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw)
+          const serverMsg = Array.isArray(parsed?.message)
+            ? parsed.message.join(", ")
+            : parsed?.message || parsed?.error
+          if (serverMsg) message = serverMsg
+        } catch {
+          message = raw
+        }
+      }
+      dispatch(showSnackbar({ message, type: "error" }))
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const getStepIcon = (step: number) => {
@@ -760,6 +794,18 @@ export default function RegisterPage() {
                         </div>
                       </div>
                     )}
+
+                    <div className="bg-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                      <h4 className="text-white font-semibold text-lg mb-4">Set Account Password</h4>
+                      <p className="text-blue-300 text-sm mb-2">Minimum 8 characters</p>
+                      <input
+                        type="password"
+                        value={accountPassword}
+                        onChange={(e) => setAccountPassword(e.target.value)}
+                        className="w-full h-12 bg-white/10 border border-white/20 rounded-xl px-4 text-white"
+                        placeholder="Create a password"
+                      />
+                    </div>
                   </div>
                 </div>
               )}
@@ -795,7 +841,7 @@ export default function RegisterPage() {
                 ) : (
                   <Button
                     onClick={completeOnboarding}
-                    disabled={isLoading}
+                    disabled={isLoading || accountPassword.length < 8}
                     className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-3 rounded-xl text-lg font-semibold shadow-lg"
                   >
                     {isLoading ? "Setting up..." : "Complete Setup"}

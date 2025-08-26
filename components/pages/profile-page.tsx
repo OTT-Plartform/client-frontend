@@ -1,4 +1,5 @@
 "use client"
+import { useEffect } from "react"
 import { useSelector } from "react-redux"
 import type { RootState } from "@/store/store"
 import Header from "@/components/layout/header"
@@ -9,9 +10,18 @@ import PaymentMethods from "@/components/sections/payment-methods"
 import SubscriptionPlans from "@/components/sections/subscription-plans"
 import { User, CreditCard, Crown } from "lucide-react"
 import DevicesList from "@/components/profile/devices-list"
+import { useRouter } from "next/navigation"
 
 export default function ProfilePage() {
   const { user } = useSelector((state: RootState) => state.auth)
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth)
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace("/login")
+    }
+  }, [isAuthenticated, router])
 
   return (
     <div className="min-h-screen bg-blue-900 text-blue-100">

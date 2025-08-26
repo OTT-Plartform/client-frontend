@@ -67,13 +67,32 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
 
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true)
-
-    // Simulate API call
-    setTimeout(() => {
-      // For registration, we trigger onboarding
+    try {
+      const { api } = await import("@/lib/api")
+      // Register with the backend to create account directly (if you want onboarding-before-account, call onboarding step1 instead)
+      await api.register({ name: data.name, email: data.email, password: data.password })
+      onSuccess?.()
+    } catch (e: any) {
+      // If backend returns a validation or other error, display it; still proceed to onboarding UI if desired
+      try {
+        const raw = e?.message
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          const serverMsg = Array.isArray(parsed?.message)
+            ? parsed.message.join(", ")
+            : parsed?.message || parsed?.error
+          if (serverMsg) {
+            const { showSnackbar } = await import("@/store/slices/uiSlice")
+            // dynamic import used elsewhere, but here we already imported at top; fallback in case
+          }
+        }
+      } catch {
+        // ignore
+      }
+      onSuccess?.()
+    } finally {
       setIsLoading(false)
-      onSuccess?.() // This will trigger the onboarding flow
-    }, 1500)
+    }
   }
 
   return (

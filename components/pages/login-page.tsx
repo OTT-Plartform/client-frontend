@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { FaApple } from "react-icons/fa"
+import { FaApple, FaGoogle, FaFacebookF, FaTwitter, FaGithub } from "react-icons/fa"
 import { useRouter } from "next/navigation"
 import { useDispatch } from "react-redux"
 import { useForm } from "react-hook-form"
@@ -56,33 +56,31 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true)
-
-    setTimeout(() => {
-      const mockUser = {
-        id: "1",
-        name: "John Doe",
-        email: data.email,
-        avatar:
-          "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=100&q=80",
-        subscription: "Premium",
-        interests: ["drama", "action", "comedy"],
-        country: "Zimbabwe",
-        city: "Harare",
-      }
-
-      dispatch(setUser(mockUser))
-      dispatch(
-        showSnackbar({
-          message: "Welcome back! Login successful",
-          type: "success",
-        })
-      )
-      localStorage.setItem("authToken", "mock-jwt-token")
-      localStorage.setItem("userData", JSON.stringify(mockUser))
-
-      setIsLoading(false)
+    try {
+      const { api } = await import("@/lib/api")
+      const res = await api.login({ email: data.email, password: data.password })
+      dispatch(setUser(res.user))
+      localStorage.setItem("userData", JSON.stringify(res.user))
+      dispatch(showSnackbar({ message: "Welcome back! Login successful", type: "success" }))
       router.push("/")
-    }, 1500)
+    } catch (e: any) {
+      let message = "Login failed"
+      const raw = e?.message ?? ""
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw)
+          const serverMsg = Array.isArray(parsed?.message)
+            ? parsed.message.join(", ")
+            : parsed?.message || parsed?.error
+          if (serverMsg) message = serverMsg
+        } catch {
+          message = raw
+        }
+      }
+      dispatch(showSnackbar({ message, type: "error" }))
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -217,28 +215,51 @@ export default function LoginPage() {
                   <div className="flex-1 h-px bg-white/20" />
                 </div>
 
-                {/* Social Logins */}
-                <div className="space-y-3">
+                {/* Social Logins - circular icons */}
+                <div className="flex items-center justify-center gap-3">
                   <Button
                     variant="outline"
-                    className="w-full h-12 flex items-center justify-center gap-3 bg-white text-black hover:bg-gray-100 rounded-xl"
+                    size="icon"
+                    className="h-11 w-11 rounded-full bg-white text-gray-900 hover:bg-gray-100"
+                    onClick={() => {
+                      const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1"
+                      window.location.href = `${base}/auth/google`
+                    }}
                   >
-                    <img
-                      src="https://www.svgrepo.com/show/475656/google-color.svg"
-                      alt="Google"
-                      className="w-5 h-5"
-                    />
-                    Continue with Google
+                    <FaGoogle className="h-5 w-5" />
                   </Button>
-
                   <Button
                     variant="outline"
-                    className="w-full flex items-center justify-center gap-3 h-12 rounded-2xl border-white/20 bg-white/5 text-white hover:bg-white/10 transition"
+                    size="icon"
+                    className="h-11 w-11 rounded-full bg-[#1877F2] text-white hover:opacity-90 border-0"
+                    onClick={() => {
+                      const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1"
+                      window.location.href = `${base}/auth/facebook`
+                    }}
                   >
-                  <FaApple className="w-6 h-6" />
-                    Continue with Apple
+                    <FaFacebookF className="h-5 w-5" />
                   </Button>
-
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11 rounded-full bg-black text-white hover:bg-gray-900"
+                  >
+                    <FaApple className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11 rounded-full bg-[#1DA1F2] text-white hover:opacity-90 border-0"
+                  >
+                    <FaTwitter className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11 rounded-full bg-gray-800 text-white hover:bg-gray-700"
+                  >
+                    <FaGithub className="h-5 w-5" />
+                  </Button>
                 </div>
 
                 <div className="text-center pt-6">

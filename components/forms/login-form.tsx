@@ -10,16 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { setUser } from "@/store/slices/authSlice"
 import { showSnackbar } from "@/store/slices/uiSlice"
-import {
-  Eye,
-  EyeOff,
-  Loader2,
-  Mail,
-  Lock,
-  ArrowRight,
-  Apple,
-  LogIn,
-} from "lucide-react"
+import { Eye, EyeOff, Loader2, Mail, Lock, ArrowRight, LogIn } from "lucide-react"
+import { FaGoogle, FaFacebookF, FaApple, FaTwitter, FaGithub } from "react-icons/fa"
 
 const loginSchema = yup.object({
   email: yup.string().email("Invalid email").required("Email is required"),
@@ -47,39 +39,47 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true)
-
-    // Simulated API call
-    setTimeout(() => {
-      const mockUser = {
-        id: "1",
-        name: "John Doe",
-        email: data.email,
-        avatar: "/placeholder.svg?height=40&width=40",
-        subscription: "Premium",
-        interests: ["drama", "action", "comedy"],
-        country: "Zimbabwe",
-        city: "Harare",
-      }
-
-      dispatch(setUser(mockUser))
+    try {
+      const { api } = await import("@/lib/api")
+      const res = await api.login({ email: data.email, password: data.password })
+      dispatch(setUser(res.user))
+      localStorage.setItem("userData", JSON.stringify(res.user))
       dispatch(showSnackbar({ message: "Welcome back! Login successful", type: "success" }))
-      localStorage.setItem("authToken", "mock-jwt-token")
-      localStorage.setItem("userData", JSON.stringify(mockUser))
-      setIsLoading(false)
       onSuccess?.()
-    }, 1500)
+    } catch (e: any) {
+      let message = "Login failed"
+      const raw = e?.message ?? ""
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw)
+          const serverMsg = Array.isArray(parsed?.message)
+            ? parsed.message.join(", ")
+            : parsed?.message || parsed?.error
+          if (serverMsg) message = serverMsg
+        } catch {
+          message = raw
+        }
+      }
+      dispatch(showSnackbar({ message, type: "error" }))
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Placeholder auth handlers
   const handleGoogleLogin = () => {
-    console.log("Google login triggered")
-    dispatch(showSnackbar({ message: "Google login not implemented", type: "info" }))
+    const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1"
+    window.location.href = `${base}/auth/google`
   }
 
-  const handleAppleLogin = () => {
-    console.log("Apple login triggered")
-    dispatch(showSnackbar({ message: "Apple login not implemented", type: "info" }))
+  const handleFacebookLogin = () => {
+    const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1"
+    window.location.href = `${base}/auth/facebook`
   }
+
+  const handleAppleLogin = () => dispatch(showSnackbar({ message: "Apple login not configured", type: "info" }))
+  const handleTwitterLogin = () => dispatch(showSnackbar({ message: "Twitter login not configured", type: "info" }))
+  const handleGithubLogin = () => dispatch(showSnackbar({ message: "GitHub login not configured", type: "info" }))
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -168,7 +168,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
       </Button>
 
       {/* Divider */}
-      <div className="relative my-4">
+      <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
           <span className="w-full border-t border-gray-700" />
         </div>
@@ -177,24 +177,22 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         </div>
       </div>
 
-      {/* Social Login Buttons */}
-      <div className="space-y-3">
-        <Button
-          type="button"
-          onClick={handleGoogleLogin}
-          className="w-full h-12 bg-white text-gray-800 hover:bg-gray-100 font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-3"
-        >
-          <img src="/google-icon.svg" alt="Google" className="w-5 h-5" />
-          Continue with Google
+      {/* Social Login Buttons (circular icons) */}
+      <div className="flex items-center justify-center gap-3">
+        <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-full bg-white text-gray-900 hover:bg-gray-100" onClick={handleGoogleLogin}>
+          <FaGoogle className="h-5 w-5" />
         </Button>
-
-        <Button
-          type="button"
-          onClick={handleAppleLogin}
-          className="w-full h-12 bg-black text-white hover:bg-gray-900 font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-3"
-        >
-          <Apple className="w-5 h-5" />
-          Continue with Apple
+        <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-full bg-[#1877F2] text-white hover:opacity-90 border-0" onClick={handleFacebookLogin}>
+          <FaFacebookF className="h-5 w-5" />
+        </Button>
+        <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-full bg-black text-white hover:bg-gray-900" onClick={handleAppleLogin}>
+          <FaApple className="h-5 w-5" />
+        </Button>
+        <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-full bg-[#1DA1F2] text-white hover:opacity-90 border-0" onClick={handleTwitterLogin}>
+          <FaTwitter className="h-5 w-5" />
+        </Button>
+        <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-full bg-gray-800 text-white hover:bg-gray-700" onClick={handleGithubLogin}>
+          <FaGithub className="h-5 w-5" />
         </Button>
       </div>
     </form>
