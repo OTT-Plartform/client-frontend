@@ -45,6 +45,7 @@ export default function LoginPage() {
   const dispatch = useDispatch()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({})
 
   const {
     register,
@@ -56,28 +57,58 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true)
+    setFieldErrors({}) // Clear previous field errors
+    
     try {
       const { api } = await import("@/lib/api")
       const res = await api.login({ email: data.email, password: data.password })
-      dispatch(setUser(res.user))
-      localStorage.setItem("userData", JSON.stringify(res.user))
-      dispatch(showSnackbar({ message: "Welcome back! Login successful", type: "success" }))
-      router.push("/")
+      if (res.success && res.data?.user) {
+        dispatch(setUser(res.data.user))
+        localStorage.setItem("userData", JSON.stringify(res.data.user))
+        dispatch(showSnackbar({ message: "Welcome back! Login successful", type: "success" }))
+        
+        // Redirect based on onboarding/profile/subscription status
+        const user = res.data.user as any
+        if (!user?.onboarding_completed) {
+          router.push("/onboarding")
+        } else if (!user?.profile_completed) {
+          router.push("/profile")
+        } else if (user?.is_subscribed === false) {
+          router.push("/onboarding?step=3")
+        } else {
+          router.push("/")
+        }
+      } else {
+        throw new Error("Login failed")
+      }
     } catch (e: any) {
       let message = "Login failed"
       const raw = e?.message ?? ""
       if (raw) {
         try {
           const parsed = JSON.parse(raw)
-          const serverMsg = Array.isArray(parsed?.message)
-            ? parsed.message.join(", ")
-            : parsed?.message || parsed?.error
-          if (serverMsg) message = serverMsg
+          if (parsed.errors) {
+            // Backend validation errors
+            setFieldErrors(parsed.errors)
+            dispatch(showSnackbar({ 
+              message: parsed.message || "Please fix the validation errors", 
+              type: "error" 
+            }))
+          } else {
+            // General backend error
+            const serverMsg = Array.isArray(parsed?.message)
+              ? parsed.message.join(", ")
+              : parsed?.message || parsed?.error
+            if (serverMsg) message = serverMsg
+            dispatch(showSnackbar({ message, type: "error" }))
+          }
         } catch {
           message = raw
+          dispatch(showSnackbar({ message, type: "error" }))
         }
+      } else {
+        dispatch(showSnackbar({ message, type: "error" }))
       }
-      dispatch(showSnackbar({ message, type: "error" }))
     } finally {
       setIsLoading(false)
     }
@@ -139,13 +170,22 @@ export default function LoginPage() {
                         id="email"
                         type="email"
                         placeholder="Enter your email address"
-                        className="pl-14 h-14 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-2xl text-lg"
+                        className={`pl-14 h-14 bg-white/10 text-white placeholder-gray-400 rounded-2xl text-lg transition-all duration-300 ${
+                          (errors.email || fieldErrors.email) 
+                            ? "border-red-500 focus:border-red-500" 
+                            : "border-white/20 focus:border-blue-500"
+                        }`}
                         {...register("email")}
+                        onChange={(e) => {
+                          if (fieldErrors.email) {
+                            setFieldErrors(prev => ({ ...prev, email: "" }))
+                          }
+                        }}
                       />
                     </div>
-                    {errors.email && (
-                      <p className="text-blue-400 text-sm">
-                        {errors.email.message}
+                    {(errors.email || fieldErrors.email) && (
+                      <p className="text-red-400 text-sm">
+                        {errors.email?.message || fieldErrors.email}
                       </p>
                     )}
                   </div>
@@ -164,8 +204,17 @@ export default function LoginPage() {
                         id="password"
                         type={showPassword ? "text" : "password"}
                         placeholder="Enter your password"
-                        className="pl-14 pr-14 h-14 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-2xl text-lg"
+                        className={`pl-14 pr-14 h-14 bg-white/10 text-white placeholder-gray-400 rounded-2xl text-lg transition-all duration-300 ${
+                          (errors.password || fieldErrors.password) 
+                            ? "border-red-500 focus:border-red-500" 
+                            : "border-white/20 focus:border-blue-500"
+                        }`}
                         {...register("password")}
+                        onChange={(e) => {
+                          if (fieldErrors.password) {
+                            setFieldErrors(prev => ({ ...prev, password: "" }))
+                          }
+                        }}
                       />
                       <Button
                         type="button"
@@ -181,9 +230,9 @@ export default function LoginPage() {
                         )}
                       </Button>
                     </div>
-                    {errors.password && (
-                      <p className="text-blue-400 text-sm">
-                        {errors.password.message}
+                    {(errors.password || fieldErrors.password) && (
+                      <p className="text-red-400 text-sm">
+                        {errors.password?.message || fieldErrors.password}
                       </p>
                     )}
                   </div>
@@ -192,7 +241,7 @@ export default function LoginPage() {
                   <Button
                     type="submit"
                     className="w-full h-14 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-semibold text-lg rounded-2xl shadow-lg"
-                    disabled={isLoading}
+                    disabled={isLoading || Object.keys(fieldErrors).length > 0}
                   >
                     {isLoading ? (
                       <>
@@ -202,7 +251,7 @@ export default function LoginPage() {
                     ) : (
                       <>
                         Sign In
-                        <ArrowRight className="w-6 h-6 ml-3" />
+                        <ArrowRight className="w-6 h-6 ml-2" />
                       </>
                     )}
                   </Button>
