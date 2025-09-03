@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Monitor, Laptop, Tablet, Smartphone } from "lucide-react"
+import { Monitor, Laptop, Tablet, Smartphone, CreditCard, Wallet, Banknote } from "lucide-react"
 
 export default function WelcomePage() {
   return (
@@ -98,6 +98,82 @@ export default function WelcomePage() {
           <div className="flex flex-col items-center">
             <Smartphone className="w-16 h-16 mb-4" />
             <p>Phone</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Payment Methods */}
+      <section className="px-6 py-16 bg-gradient-to-b from-black to-blue-950 text-center">
+        <h3 className="text-2xl font-bold mb-12">Flexible Payment Methods</h3>
+        <div className="flex flex-wrap justify-center gap-8 text-blue-200">
+          <div className="flex flex-col items-center p-6 bg-blue-900/40 rounded-xl shadow-lg hover:scale-105 transition">
+            <CreditCard className="w-12 h-12 mb-3" />
+            <p>Credit / Debit Cards</p>
+          </div>
+          <div className="flex flex-col items-center p-6 bg-blue-900/40 rounded-xl shadow-lg hover:scale-105 transition">
+            <Wallet className="w-12 h-12 mb-3" />
+            <p>Mobile Wallets</p>
+          </div>
+          <div className="flex flex-col items-center p-6 bg-blue-900/40 rounded-xl shadow-lg hover:scale-105 transition">
+            <Banknote className="w-12 h-12 mb-3" />
+            <p>Bank Transfers</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Payment Plans */}
+      <section className="px-6 py-20 bg-gradient-to-b from-blue-950 to-black text-center">
+        <h3 className="text-2xl font-bold mb-12">Choose Your Plan</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          {/* Basic Plan */}
+          <div className="p-8 bg-blue-900/40 rounded-xl shadow-lg hover:scale-105 transition">
+            <h4 className="text-xl font-semibold mb-4">Basic</h4>
+            <p className="text-3xl font-bold mb-4">$5<span className="text-lg">/mo</span></p>
+            <ul className="text-blue-300 text-sm mb-6 space-y-2">
+              <li>✔ 480p Quality</li>
+              <li>✔ 1 Device</li>
+              <li>✔ Unlimited Access</li>
+            </ul>
+            <Link
+              href="/register"
+              className="px-6 py-2 rounded-xl bg-green-600 hover:bg-green-700 transition font-medium shadow-md"
+            >
+              Choose Plan
+            </Link>
+          </div>
+
+          {/* Standard Plan */}
+          <div className="p-8 bg-blue-900/60 rounded-xl shadow-lg hover:scale-105 transition border-2 border-green-600">
+            <h4 className="text-xl font-semibold mb-4">Standard</h4>
+            <p className="text-3xl font-bold mb-4">$10<span className="text-lg">/mo</span></p>
+            <ul className="text-blue-300 text-sm mb-6 space-y-2">
+              <li>✔ 1080p Quality</li>
+              <li>✔ 2 Devices</li>
+              <li>✔ Unlimited Access</li>
+            </ul>
+            <Link
+              href="/register"
+              className="px-6 py-2 rounded-xl bg-green-600 hover:bg-green-700 transition font-medium shadow-md"
+            >
+              Choose Plan
+            </Link>
+          </div>
+
+          {/* Premium Plan */}
+          <div className="p-8 bg-blue-900/40 rounded-xl shadow-lg hover:scale-105 transition">
+            <h4 className="text-xl font-semibold mb-4">Premium</h4>
+            <p className="text-3xl font-bold mb-4">$15<span className="text-lg">/mo</span></p>
+            <ul className="text-blue-300 text-sm mb-6 space-y-2">
+              <li>✔ 4K Ultra HD</li>
+              <li>✔ 4 Devices</li>
+              <li>✔ Unlimited Access</li>
+            </ul>
+            <Link
+              href="/register"
+              className="px-6 py-2 rounded-xl bg-green-600 hover:bg-green-700 transition font-medium shadow-md"
+            >
+              Choose Plan
+            </Link>
           </div>
         </div>
       </section>
