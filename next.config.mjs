@@ -13,8 +13,6 @@ const nextConfig = {
   output: 'standalone',
   // Configure for production deployment
   trailingSlash: false,
-  // Disable telemetry
-  telemetry: false,
 }
 
 export default nextConfig
