@@ -43,6 +43,11 @@ sudo apt update
 print_status "Installing required packages..."
 sudo apt install -y apt-transport-https ca-certificates curl gnupg lsb-release software-properties-common
 
+print_status "Installing Node.js and Yarn..."
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt install -y nodejs
+sudo npm install -g yarn
+
 print_status "Adding Docker's official GPG key..."
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 

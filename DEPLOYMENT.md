@@ -8,6 +8,8 @@ This guide explains how to deploy the ZIMUSHA frontend application on Ubuntu ser
 - Ubuntu 20.04 LTS or later
 - Docker 20.10+ 
 - Docker Compose 2.0+
+- Node.js 18+ (for local development)
+- Yarn (for local development)
 - At least 2GB RAM
 - At least 10GB free disk space
 
@@ -194,6 +196,42 @@ telnet 185.209.228.74 8080
 2. **SSL/HTTPS**: Consider using a reverse proxy (nginx) with SSL certificates
 3. **Environment Variables**: Keep sensitive data in environment variables
 4. **Updates**: Regularly update Docker images and dependencies
+
+## Local Development
+
+### Prerequisites for Local Development
+- Node.js 18+
+- Yarn package manager
+
+### Setup Local Development
+```bash
+# Install dependencies
+yarn install
+
+# Create environment file
+cp .env.example .env.local
+
+# Start development server
+yarn dev
+```
+
+### Available Scripts
+```bash
+# Development server
+yarn dev
+
+# Build for production
+yarn build
+
+# Start production server
+yarn start
+
+# Lint code
+yarn lint
+
+# Type check
+yarn type-check
+```
 
 ## Monitoring
 
