@@ -306,14 +306,14 @@ export default function OnboardingPage() {
       
       // Step 1: Save personal info
       await api.savePersonalInfo({
-        firstName: onboardingData.personalInfo.firstName,
-        lastName: onboardingData.personalInfo.lastName,
+          firstName: onboardingData.personalInfo.firstName,
+          lastName: onboardingData.personalInfo.lastName,
         phoneNumber: onboardingData.personalInfo.phoneNumber,
         dateOfBirth: onboardingData.personalInfo.dateOfBirth,
-        country: onboardingData.personalInfo.country,
-        city: onboardingData.personalInfo.city,
-        bio: onboardingData.personalInfo.bio || undefined,
-      })
+          country: onboardingData.personalInfo.country,
+          city: onboardingData.personalInfo.city,
+          bio: onboardingData.personalInfo.bio || undefined,
+        })
 
       // Step 2: Save genres
       await api.saveGenres({ genre_ids: onboardingData.interests })
@@ -449,10 +449,10 @@ export default function OnboardingPage() {
                           Step {stepNumber}
                         </p>
                       </div>
-                    </div>
+                  </div>
                   )
                 })}
-              </div>
+                </div>
             </div>
 
             {/* Current Step Indicator */}
@@ -460,8 +460,8 @@ export default function OnboardingPage() {
               <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
                 <div className="w-2 h-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full animate-pulse" />
                 <p className="text-white text-sm font-medium">
-                  Step {currentStep} of {totalSteps}
-                </p>
+                Step {currentStep} of {totalSteps}
+              </p>
               </div>
             </div>
           </div>
@@ -492,24 +492,24 @@ export default function OnboardingPage() {
                       <Label className="text-white font-medium text-lg">First Name</Label>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <Input
-                          placeholder="Enter your first name"
-                          value={onboardingData.personalInfo.firstName}
-                          onChange={(e) => updatePersonalInfo("firstName", e.target.value)}
+                      <Input
+                        placeholder="Enter your first name"
+                        value={onboardingData.personalInfo.firstName}
+                        onChange={(e) => updatePersonalInfo("firstName", e.target.value)}
                           className="h-12 pl-10 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-xl text-lg focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300"
-                        />
+                      />
                       </div>
                     </div>
                     <div className="space-y-3">
                       <Label className="text-white font-medium text-lg">Last Name</Label>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <Input
-                          placeholder="Enter your last name"
-                          value={onboardingData.personalInfo.lastName}
-                          onChange={(e) => updatePersonalInfo("lastName", e.target.value)}
+                      <Input
+                        placeholder="Enter your last name"
+                        value={onboardingData.personalInfo.lastName}
+                        onChange={(e) => updatePersonalInfo("lastName", e.target.value)}
                           className="h-12 pl-10 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-xl text-lg focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300"
-                        />
+                      />
                       </div>
                     </div>
                   </div>
@@ -533,7 +533,7 @@ export default function OnboardingPage() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <Input
+                      <Input
                           placeholder="77 123 4567"
                           value={onboardingData.personalInfo.phoneNumber}
                           onChange={(e) => updatePersonalInfo("phoneNumber", e.target.value)}
@@ -617,12 +617,12 @@ export default function OnboardingPage() {
                       <Label className="text-white font-medium text-lg">City</Label>
                       <div className="relative">
                         <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <Input
-                          placeholder="Enter your city"
-                          value={onboardingData.personalInfo.city}
-                          onChange={(e) => updatePersonalInfo("city", e.target.value)}
+                      <Input
+                        placeholder="Enter your city"
+                        value={onboardingData.personalInfo.city}
+                        onChange={(e) => updatePersonalInfo("city", e.target.value)}
                           className="h-12 pl-10 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-xl text-lg focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300"
-                        />
+                      />
                       </div>
                     </div>
                   </div>
@@ -766,16 +766,16 @@ export default function OnboardingPage() {
                   {/* Payment Method Selection */}
                   <div className="space-y-4">
                     <h4 className="text-white font-semibold text-xl text-center">Payment Method</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {(backendPaymentMethods || paymentMethods).map((method: any) => {
                         const methodKey = method.key || method.id
                         const methodLabel = method.label || method.name
                         const isSelected = onboardingData.paymentMethod === methodKey
-                        return (
-                          <div
+                          return (
+                            <div
                             key={methodKey}
                             className={`border-2 rounded-2xl p-4 cursor-pointer transition-all duration-300 transform hover:scale-105 ${
-                              isSelected
+                                isSelected
                                 ? "border-blue-600 bg-gradient-to-br from-blue-600/10 to-purple-600/10 shadow-lg"
                                 : "border-white/20 bg-white/5 hover:border-white/40 hover:bg-white/10"
                             }`}
@@ -784,20 +784,20 @@ export default function OnboardingPage() {
                             <div className="flex items-center gap-3">
                               <div className="w-12 h-12 bg-gradient-to-r from-gray-600 to-gray-700 rounded-xl flex items-center justify-center">
                                 {(method.type === "mobile_money" || methodKey === "ecocash" || methodKey === "inbucks") ? (
-                                  <Smartphone className="w-6 h-6 text-white" />
-                                ) : (
-                                  <CreditCard className="w-6 h-6 text-white" />
-                                )}
-                              </div>
-                              <div className="flex-1">
+                                    <Smartphone className="w-6 h-6 text-white" />
+                                  ) : (
+                                    <CreditCard className="w-6 h-6 text-white" />
+                                  )}
+                                </div>
+                                <div className="flex-1">
                                 <h4 className="text-white font-semibold">{methodLabel}</h4>
                                 <p className="text-gray-400 text-sm">{method.description || "Secure payment method"}</p>
+                                </div>
+                                {isSelected && <CheckCircle className="w-6 h-6 text-blue-600" />}
                               </div>
-                              {isSelected && <CheckCircle className="w-6 h-6 text-blue-600" />}
                             </div>
-                          </div>
-                        )
-                      })}
+                          )
+                        })}
                     </div>
                   </div>
                 </div>

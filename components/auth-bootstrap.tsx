@@ -30,6 +30,12 @@ export default function AuthBootstrap({ children }: { children: React.ReactNode 
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        // Skip auth initialization if we're on the OAuth callback page
+        if (pathname === '/auth/callback') {
+          setIsLoading(false)
+          return
+        }
+
         // Check if user data exists in localStorage
         const userData = localStorage.getItem("userData")
         const accessToken = localStorage.getItem("accessToken")
@@ -64,7 +70,7 @@ export default function AuthBootstrap({ children }: { children: React.ReactNode 
     }
 
     initializeAuth()
-  }, [dispatch])
+  }, [dispatch, pathname])
 
   useEffect(() => {
     if (isLoading) return
@@ -82,11 +88,10 @@ export default function AuthBootstrap({ children }: { children: React.ReactNode 
       if (isAuthenticated) {
         if (!isOnboardingDone) {
           router.push("/onboarding")
-        } else if (!isProfileDone) {
-          router.push("/profile")
         } else if (!isSubscribed) {
           router.push("/onboarding?step=3")
         } else {
+          // Go to home page for authenticated users
           router.push("/")
         }
         return
@@ -101,33 +106,31 @@ export default function AuthBootstrap({ children }: { children: React.ReactNode 
       }
       if (!isOnboardingDone) {
         // stay on onboarding
-      } else if (!isProfileDone) {
-        router.push("/profile")
-        return
       } else if (!isSubscribed) {
         router.push("/onboarding?step=3")
         return
       } else {
+        // Go to home page after onboarding is complete
         router.push("/")
         return
       }
     }
 
-    // Handle home route redirects
+    // Handle home route redirects - only redirect if user is not fully set up
     if (pathname === "/") {
       if (isAuthenticated) {
+        // Only redirect if user hasn't completed essential steps
         if (!isOnboardingDone) {
           router.push("/onboarding")
           return
         }
-        if (!isProfileDone) {
-          router.push("/profile")
-          return
-        }
+        // Allow users to access home page even if profile is not complete
+        // They can complete profile later from the home page
         if (!isSubscribed) {
           router.push("/onboarding?step=3")
           return
         }
+        // If user is authenticated and subscribed, let them stay on home page
       }
     }
   }, [pathname, isAuthenticated, isOnboardingDone, isProfileDone, isSubscribed, isLoading, router])

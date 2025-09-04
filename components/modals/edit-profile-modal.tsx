@@ -13,6 +13,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { formatAvatarUrl, getUserInitials } from "@/lib/avatar-utils"
 import { X, Calendar as CalendarIcon, Upload, Loader2 } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
@@ -179,11 +180,11 @@ export default function EditProfileModal({ isOpen, onClose }: EditProfileModalPr
             <div className="relative">
               <Avatar className="w-24 h-24 border-4 border-blue-600 shadow-lg">
                 <AvatarImage 
-                  src={formData.avatar ? URL.createObjectURL(formData.avatar) : user?.avatar || "/placeholder-user.jpg"} 
+                  src={formData.avatar ? URL.createObjectURL(formData.avatar) : formatAvatarUrl(user?.avatar) || "/placeholder-user.jpg"} 
                   alt="Profile" 
                 />
                 <AvatarFallback className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-2xl font-bold">
-                  {(user?.full_name || "U")?.charAt(0).toUpperCase()}
+                  {getUserInitials(user)}
                 </AvatarFallback>
               </Avatar>
               <Button

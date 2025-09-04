@@ -9,6 +9,12 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Enable standalone output for Docker
+  output: 'standalone',
+  // Configure for production deployment
+  trailingSlash: false,
+  // Disable telemetry
+  telemetry: false,
 }
 
 export default nextConfig

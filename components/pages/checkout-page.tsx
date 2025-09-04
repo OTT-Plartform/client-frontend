@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { setUser } from "@/store/slices/authSlice"
 import { showSnackbar } from "@/store/slices/uiSlice"
+import PaymentSuccess from "@/components/animations/payment-success"
 import {
   Check,
   Crown,
@@ -37,6 +38,7 @@ export default function CheckoutPage() {
   const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null)
   const [selectedPlan, setSelectedPlan] = useState<any>(null)
   const [paymentMethod, setPaymentMethod] = useState<any>(null)
+  const [showPaymentSuccess, setShowPaymentSuccess] = useState(false)
 
   useEffect(() => {
     // Get data from URL params
@@ -136,8 +138,8 @@ export default function CheckoutPage() {
       const profileResponse = await api.getProfile()
       if (profileResponse.success) {
         dispatch(setUser(profileResponse.data.user))
-        dispatch(showSnackbar({ message: "Payment successful! Welcome to ZIMUSHA!", type: "success" }))
-        router.push("/")
+        // Show payment success animation
+        setShowPaymentSuccess(true)
       }
     } catch (e: any) {
       let message = "Payment failed"
@@ -159,6 +161,10 @@ export default function CheckoutPage() {
     }
   }
 
+  const handlePaymentSuccessComplete = () => {
+    router.push("/")
+  }
+
   if (!checkoutData || !selectedPlan) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
@@ -171,6 +177,17 @@ export default function CheckoutPage() {
   }
 
   const totals = calculateTotal()
+
+  // Show payment success animation
+  if (showPaymentSuccess) {
+    return (
+      <PaymentSuccess 
+        amount={totals.total} 
+        planName={selectedPlan.name} 
+        onComplete={handlePaymentSuccessComplete} 
+      />
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden">
@@ -237,12 +254,6 @@ export default function CheckoutPage() {
                         <span className="text-4xl font-bold text-white">${selectedPlan.price}</span>
                         <span className="text-gray-400 text-lg">/{selectedPlan.billing_cycle || 'month'}</span>
                       </div>
-
-                      {checkoutData.period === "yearly" && (
-                        <Badge className="bg-green-600 text-white px-3 py-1 text-sm">
-                          Save 20% with yearly billing
-                        </Badge>
-                      )}
                     </div>
 
                     {/* Plan Features */}
@@ -260,22 +271,6 @@ export default function CheckoutPage() {
                       </div>
                     )}
                   </div>
-
-                  {/* Payment Method */}
-                  <div className="space-y-4">
-                    <h4 className="text-white text-lg font-semibold">Payment Method</h4>
-                    <div className="border border-white/20 rounded-2xl p-4 bg-white/5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gradient-to-r from-gray-600 to-gray-700 rounded-xl flex items-center justify-center">
-                          {getPaymentIcon(paymentMethod?.key || '')}
-                        </div>
-                        <div>
-                          <h5 className="text-white font-semibold">{paymentMethod?.label || 'Payment Method'}</h5>
-                          <p className="text-gray-400 text-sm">Secure payment processing</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Right Column - Order Summary */}
@@ -283,54 +278,20 @@ export default function CheckoutPage() {
                   <h3 className="text-white text-xl font-semibold">Order Summary</h3>
                   
                   <div className="bg-white/5 rounded-2xl p-6 border border-white/20">
-                    {/* Billing Cycle */}
+                    {/* Plan & Billing */}
                     <div className="flex items-center justify-between mb-4 p-3 bg-white/5 rounded-xl">
                       <div>
-                        <p className="text-white font-medium">Billing Cycle</p>
-                        <p className="text-gray-400 text-sm capitalize">{checkoutData.period}</p>
-                      </div>
-                      <Badge className="bg-blue-600 text-white">
-                        {checkoutData.period === "yearly" ? "Yearly" : "Monthly"}
-                      </Badge>
-                    </div>
-
-                    {/* Plan Price */}
-                    <div className="flex items-center justify-between mb-4 p-3 bg-white/5 rounded-xl">
-                      <div>
-                        <p className="text-white font-medium">Plan Price</p>
-                        <p className="text-gray-400 text-sm">{selectedPlan.name}</p>
-                      </div>
-                      <span className="text-white font-semibold">${selectedPlan.price}</span>
-                    </div>
-
-                    {/* Billing Period */}
-                    <div className="flex items-center justify-between mb-4 p-3 bg-white/5 rounded-xl">
-                      <div>
-                        <p className="text-white font-medium">Billing Period</p>
+                        <p className="text-white font-medium">{selectedPlan.name}</p>
                         <p className="text-gray-400 text-sm">
-                          {checkoutData.period === "yearly" ? "12 months" : "1 month"}
+                          {checkoutData.period === "yearly" ? "Yearly billing (12 months)" : "Monthly billing"}
                         </p>
                       </div>
-                      <span className="text-white font-semibold">
-                        {checkoutData.period === "yearly" ? "× 12" : "× 1"}
-                      </span>
-                    </div>
-
-                    {/* Discount for yearly */}
-                    {checkoutData.period === "yearly" && (
-                      <div className="flex items-center justify-between mb-4 p-3 bg-green-600/20 rounded-xl border border-green-500/30">
-                        <div>
-                          <p className="text-green-400 font-medium">Yearly Discount</p>
-                          <p className="text-green-400/70 text-sm">Save 20%</p>
-                        </div>
-                        <span className="text-green-400 font-semibold">-20%</span>
+                      <div className="text-right">
+                        <span className="text-white font-semibold">${selectedPlan.price}</span>
+                        <p className="text-gray-400 text-sm">
+                          {checkoutData.period === "yearly" ? "× 12 months" : "× 1 month"}
+                        </p>
                       </div>
-                    )}
-
-                    {/* Subtotal */}
-                    <div className="flex items-center justify-between mb-4 p-3 bg-white/5 rounded-xl">
-                      <span className="text-white font-medium">Subtotal</span>
-                      <span className="text-white font-semibold">${totals.subtotal}</span>
                     </div>
 
                     {/* Tax */}
@@ -351,24 +312,18 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  {/* Security & Trust */}
-                  <div className="bg-white/5 rounded-2xl p-6 border border-white/20">
-                    <div className="flex items-center gap-3 mb-4">
-                      <Shield className="w-6 h-6 text-green-500" />
-                      <h4 className="text-white font-semibold">Secure Payment</h4>
-                    </div>
-                    <div className="space-y-2 text-sm text-gray-300">
-                      <div className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-green-500" />
-                        <span>256-bit SSL encryption</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-green-500" />
-                        <span>PCI DSS compliant</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-green-500" />
-                        <span>Your data is protected</span>
+                  {/* Payment Method */}
+                  <div className="space-y-4">
+                    <h4 className="text-white text-lg font-semibold">Payment Method</h4>
+                    <div className="border border-white/20 rounded-2xl p-4 bg-white/5">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gradient-to-r from-gray-600 to-gray-700 rounded-xl flex items-center justify-center">
+                          {getPaymentIcon(paymentMethod?.key || '')}
+                        </div>
+                        <div>
+                          <h5 className="text-white font-semibold">{paymentMethod?.label || 'Payment Method'}</h5>
+                          <p className="text-gray-400 text-sm">Secure payment processing</p>
+                        </div>
                       </div>
                     </div>
                   </div>

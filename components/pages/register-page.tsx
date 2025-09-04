@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { setUser, setOAuthLoading } from "@/store/slices/authSlice"
 import { showSnackbar } from "@/store/slices/uiSlice"
+import { api } from "@/lib/api"
 import { Mail, Lock, Home, Loader2, Play, Crown, Users } from "lucide-react"
 import { useSelector } from "react-redux"
 import { RootState } from "@/store/store"
@@ -22,7 +23,7 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
   const { isOAuthLoading, oauthProvider } = useSelector((state: RootState) => state.auth)
   const [formData, setFormData] = useState({
-    email: "",
+      email: "",
     password: "",
     passwordConfirmation: ""
   })
@@ -101,12 +102,19 @@ export default function RegisterPage() {
   const handleOAuthLogin = async (provider: 'google' | 'facebook') => {
     dispatch(setOAuthLoading({ loading: true, provider }))
     try {
-      const { api } = await import("@/lib/api")
-      const redirectUrl = await api.oauthRedirect(provider)
-      window.location.href = redirectUrl
+      if (provider === 'google') {
+        const googleAuthUrl = await api.googleAuth()
+        window.location.href = googleAuthUrl
+      } else if (provider === 'facebook') {
+        const base = process.env.NEXT_PUBLIC_API_URL || "http://185.209.228.74:8080/api"
+        window.location.href = `${base}/auth/facebook`
+      }
     } catch (error: any) {
-      dispatch(showSnackbar({ message: `Failed to connect with ${provider}`, type: "error" }))
-      dispatch(setOAuthLoading({ loading: false }))
+      dispatch(setOAuthLoading({ loading: false, provider: undefined }))
+      dispatch(showSnackbar({ 
+        message: error.message || `Failed to initialize ${provider} login`, 
+        type: "error" 
+      }))
     }
   }
 
@@ -163,8 +171,8 @@ export default function RegisterPage() {
                   <div className="text-left">
                     <h3 className="text-white text-base font-semibold">Unlimited Streaming</h3>
                     <p className="text-gray-400 text-sm">Watch thousands of movies and TV shows anytime, anywhere</p>
+                    </div>
                   </div>
-                </div>
 
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
@@ -179,28 +187,28 @@ export default function RegisterPage() {
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
                     <Users className="w-5 h-5 text-white" />
-                  </div>
+                              </div>
                   <div className="text-left">
                     <h3 className="text-white text-base font-semibold">Family Friendly</h3>
                     <p className="text-gray-400 text-sm">Multiple profiles and parental controls for the whole family</p>
                   </div>
                 </div>
-              </div>
+                            </div>
 
               {/* Content Preview */}
               <div className="bg-white/10 rounded-2xl p-4 backdrop-blur-sm border border-white/20">
                 <h3 className="text-white text-lg font-semibold mb-3">What You'll Discover</h3>
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="text-center">
+                          <div className="text-center">
                     <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl mx-auto mb-1 flex items-center justify-center">
                       <span className="text-white text-lg">🎬</span>
-                    </div>
+                            </div>
                     <p className="text-gray-300 text-xs">African Cinema</p>
-                  </div>
+                            </div>
                   <div className="text-center">
                     <div className="w-12 h-12 bg-gradient-to-r from-green-600 to-blue-600 rounded-xl mx-auto mb-1 flex items-center justify-center">
                       <span className="text-white text-lg">📺</span>
-                    </div>
+                          </div>
                     <p className="text-gray-300 text-xs">TV Series</p>
                   </div>
                   <div className="text-center">
@@ -226,8 +234,8 @@ export default function RegisterPage() {
                   <div className="text-white text-xl font-bold">1M+</div>
                   <div className="text-gray-400 text-xs">Happy Viewers</div>
                 </div>
-              </div>
-            </div>
+                      </div>
+                    </div>
 
             {/* Right Side - Registration Form */}
             <div className="flex justify-center lg:justify-end h-full">
@@ -262,16 +270,16 @@ export default function RegisterPage() {
                   )}
                   Continue with Facebook
                 </Button>
-              </div>
+                                </div>
 
               <div className="relative mb-6">
                 <div className="absolute inset-0 flex items-center">
                   <span className="w-full border-t border-white/20" />
-                </div>
+                                </div>
                 <div className="relative flex justify-center text-xs uppercase">
                   <span className="bg-black/40 px-2 text-gray-400">Or continue with email</span>
-                </div>
-              </div>
+                              </div>
+                            </div>
 
               {/* Registration Form */}
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -295,7 +303,7 @@ export default function RegisterPage() {
                       }`}
                       required
                     />
-                  </div>
+                      </div>
                   {errors.email && (
                     <p className="text-red-400 text-sm">{errors.email}</p>
                   )}
@@ -326,15 +334,15 @@ export default function RegisterPage() {
                     <p className="text-red-400 text-sm">{errors.password}</p>
                   ) : (
                     <p className="text-gray-400 text-sm">Minimum 8 characters</p>
-                  )}
-                </div>
+                            )}
+                          </div>
 
                 <div className="space-y-3">
                   <Label className="text-white font-medium">Confirm Password</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <Input
-                      type="password"
+                        type="password"
                       placeholder="Confirm your password"
                       value={formData.passwordConfirmation}
                       onChange={(e) => {

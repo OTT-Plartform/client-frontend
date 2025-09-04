@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { FaApple, FaGoogle, FaFacebookF, FaTwitter, FaGithub } from "react-icons/fa"
-import { useRouter } from "next/navigation"
-import { useDispatch } from "react-redux"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useDispatch, useSelector } from "react-redux"
 import { useForm } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
@@ -17,8 +17,10 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { setUser } from "@/store/slices/authSlice"
+import { setUser, setOAuthLoading } from "@/store/slices/authSlice"
 import { showSnackbar } from "@/store/slices/uiSlice"
+import { api } from "@/lib/api"
+import LoginSuccess from "@/components/animations/login-success"
 import {
   Eye,
   EyeOff,
@@ -42,10 +44,14 @@ type LoginFormData = yup.InferType<typeof loginSchema>
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const dispatch = useDispatch()
+  const { isOAuthLoading, oauthProvider } = useSelector((state: any) => state.auth)
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({})
+  const [showLoginSuccess, setShowLoginSuccess] = useState(false)
+  const [userName, setUserName] = useState<string>('')
 
   const {
     register,
@@ -54,6 +60,21 @@ export default function LoginPage() {
   } = useForm<LoginFormData>({
     resolver: yupResolver(loginSchema),
   })
+
+  // Handle OAuth errors from URL parameters
+  useEffect(() => {
+    const oauthError = searchParams.get('error')
+    if (oauthError === 'oauth_failed') {
+      dispatch(showSnackbar({ 
+        message: "OAuth authentication failed. Please try again.", 
+        type: "error" 
+      }))
+      // Clear the error parameter from URL
+      const url = new URL(window.location.href)
+      url.searchParams.delete('error')
+      window.history.replaceState({}, '', url.toString())
+    }
+  }, [searchParams, dispatch])
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true)
@@ -65,19 +86,11 @@ export default function LoginPage() {
       if (res.success && res.data?.user) {
         dispatch(setUser(res.data.user))
         localStorage.setItem("userData", JSON.stringify(res.data.user))
-        dispatch(showSnackbar({ message: "Welcome back! Login successful", type: "success" }))
         
-        // Redirect based on onboarding/profile/subscription status
+        // Set user name and show success animation
         const user = res.data.user as any
-        if (!user?.onboarding_completed) {
-          router.push("/onboarding")
-        } else if (!user?.profile_completed) {
-          router.push("/profile")
-        } else if (user?.is_subscribed === false) {
-          router.push("/onboarding?step=3")
-        } else {
-          router.push("/")
-        }
+        setUserName(user.full_name || user.email || 'User')
+        setShowLoginSuccess(true)
       } else {
         throw new Error("Login failed")
       }
@@ -112,6 +125,62 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // OAuth handlers
+  const handleGoogleLogin = async () => {
+    try {
+      dispatch(setOAuthLoading({ loading: true, provider: 'google' }))
+      
+      const googleAuthUrl = await api.googleAuth()
+      
+      // Redirect to Google OAuth
+      window.location.href = googleAuthUrl
+    } catch (error: any) {
+      dispatch(setOAuthLoading({ loading: false, provider: undefined }))
+      dispatch(showSnackbar({ 
+        message: error.message || "Failed to initialize Google login", 
+        type: "error" 
+      }))
+    }
+  }
+
+  const handleFacebookLogin = async () => {
+    try {
+      dispatch(setOAuthLoading({ loading: true, provider: 'facebook' }))
+      
+      const base = process.env.NEXT_PUBLIC_API_URL || "http://185.209.228.74:8080/api"
+      window.location.href = `${base}/auth/facebook`
+    } catch (error: any) {
+      dispatch(setOAuthLoading({ loading: false, provider: undefined }))
+      dispatch(showSnackbar({ 
+        message: "Failed to initialize Facebook login", 
+        type: "error" 
+      }))
+    }
+  }
+
+  const handleLoginSuccessComplete = () => {
+    // Get the user data to determine redirect
+    const userData = localStorage.getItem('userData')
+    if (userData) {
+      const user = JSON.parse(userData)
+      if (!user.onboarding_completed) {
+        router.push("/onboarding")
+      } else if (user.is_subscribed === false) {
+        router.push("/onboarding?step=3")
+      } else {
+        // Go to home page for all other cases (including incomplete profile)
+        router.push("/")
+      }
+    } else {
+      router.push("/")
+    }
+  }
+
+  // Show login success animation
+  if (showLoginSuccess) {
+    return <LoginSuccess userName={userName} onComplete={handleLoginSuccessComplete} />
   }
 
   return (
@@ -270,23 +339,27 @@ export default function LoginPage() {
                     variant="outline"
                     size="icon"
                     className="h-11 w-11 rounded-full bg-white text-gray-900 hover:bg-gray-100"
-                    onClick={() => {
-                      const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1"
-                      window.location.href = `${base}/auth/google`
-                    }}
+                    onClick={handleGoogleLogin}
+                    disabled={isOAuthLoading && oauthProvider === 'google'}
                   >
-                    <FaGoogle className="h-5 w-5" />
+                    {isOAuthLoading && oauthProvider === 'google' ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <FaGoogle className="h-5 w-5" />
+                    )}
                   </Button>
                   <Button
                     variant="outline"
                     size="icon"
                     className="h-11 w-11 rounded-full bg-[#1877F2] text-white hover:opacity-90 border-0"
-                    onClick={() => {
-                      const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1"
-                      window.location.href = `${base}/auth/facebook`
-                    }}
+                    onClick={handleFacebookLogin}
+                    disabled={isOAuthLoading && oauthProvider === 'facebook'}
                   >
-                    <FaFacebookF className="h-5 w-5" />
+                    {isOAuthLoading && oauthProvider === 'facebook' ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <FaFacebookF className="h-5 w-5" />
+                    )}
                   </Button>
                   <Button
                     variant="outline"

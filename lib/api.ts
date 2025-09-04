@@ -1,7 +1,7 @@
 // lib/api.ts
 import { clearStoredTokens, getStoredTokens, setStoredTokens } from "./auth"
 
-const DEFAULT_BASE_URL = "http://stitchit.test/api"
+const DEFAULT_BASE_URL = "http://185.209.228.74:8080/api"
 
 function getBaseUrl() {
   return process.env.NEXT_PUBLIC_API_URL || DEFAULT_BASE_URL
@@ -140,6 +140,30 @@ export const api = {
     if (!res.ok) throw new Error(await res.text())
     const data = await res.json()
     return data.redirect_url || data.url
+  },
+
+  // Google OAuth specific methods
+  async googleAuth(): Promise<string> {
+    try {
+      // Call backend to get the redirect URL
+      const res = await fetch(`${getBaseUrl()}/oauth/redirect/google`, {
+        method: "GET",
+        headers: { "Accept": "application/json" },
+      })
+      
+      if (!res.ok) throw new Error("Failed to get Google OAuth redirect URL")
+      
+      const data = await res.json()
+      
+      if (data.success && data.data?.redirect_url) {
+        return data.data.redirect_url
+      } else {
+        throw new Error(data.message || "Invalid redirect URL response")
+      }
+    } catch (error) {
+      console.error("Google OAuth redirect error:", error)
+      throw new Error("Failed to initialize Google OAuth")
+    }
   },
 
   async oauthTokenExchange(provider: 'google' | 'facebook', accessToken: string): Promise<AuthResponseDto> {

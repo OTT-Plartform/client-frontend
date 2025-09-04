@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { formatAvatarUrl, getUserDisplayName, getUserInitials } from "@/lib/avatar-utils"
 import { 
   User, 
   Heart, 
@@ -69,9 +70,12 @@ export default function ProfilePage() {
               <div className="flex flex-col items-center text-center space-y-6">
                 <div className="relative">
                   <Avatar className="w-32 h-32 border-4 border-white shadow-lg">
-                    <AvatarImage src={user?.avatar || "/placeholder-user.jpg"} alt={user?.full_name || "U"} />
+                    <AvatarImage 
+                      src={formatAvatarUrl(user?.avatar) || "/placeholder-user.jpg"} 
+                      alt={getUserDisplayName(user)} 
+                    />
                     <AvatarFallback className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-3xl font-semibold">
-                      {(user?.full_name || "U")?.charAt(0).toUpperCase()}
+                      {getUserInitials(user)}
                     </AvatarFallback>
                   </Avatar>
                   <Button
@@ -84,7 +88,7 @@ export default function ProfilePage() {
 
                 <div className="space-y-2">
                   <h1 className="text-2xl font-semibold text-white">
-                    {user?.full_name || "User Name"}
+                    {getUserDisplayName(user) || "User Name"}
                   </h1>
                   <p className="text-gray-300 flex items-center gap-2">
                     <Mail className="w-4 h-4" />
@@ -239,7 +243,7 @@ export default function ProfilePage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-2">
                         <p className="text-sm font-medium text-gray-400">Full Name</p>
-                        <p className="text-white text-lg">{user?.full_name || "Not provided"}</p>
+                        <p className="text-white text-lg">{getUserDisplayName(user) || "Not provided"}</p>
                       </div>
                       <div className="space-y-2">
                         <p className="text-sm font-medium text-gray-400">Email</p>
