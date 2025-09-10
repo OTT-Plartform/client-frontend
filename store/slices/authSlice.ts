@@ -2,24 +2,39 @@ import { createSlice, type PayloadAction } from "@reduxjs/toolkit"
 
 interface User {
   id: string
-  name: string
   email: string
+  first_name: string
+  last_name: string
+  full_name: string
+  phone_number?: string
   avatar?: string
-  phone?: string
+  date_of_birth?: string
+  country?: string
+  city?: string
   bio?: string
-  subscription: string
+  provider?: string
+  provider_id?: string
+  is_profile_complete: boolean
+  favorite_genres?: any[]
+  subscription?: any
+  created_at: string
+  updated_at: string
 }
 
 interface AuthState {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
+  isOAuthLoading: boolean
+  oauthProvider?: 'google' | 'facebook'
 }
 
 const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
   isLoading: false,
+  isOAuthLoading: false,
+  oauthProvider: undefined,
 }
 
 const authSlice = createSlice({
@@ -44,8 +59,12 @@ const authSlice = createSlice({
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload
     },
+    setOAuthLoading: (state, action: PayloadAction<{ loading: boolean; provider?: 'google' | 'facebook' }>) => {
+      state.isOAuthLoading = action.payload.loading
+      state.oauthProvider = action.payload.provider
+    },
   },
 })
 
-export const { setUser, updateUser, logout, setLoading } = authSlice.actions
+export const { setUser, updateUser, logout, setLoading, setOAuthLoading } = authSlice.actions
 export default authSlice.reducer

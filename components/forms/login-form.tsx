@@ -1,15 +1,16 @@
 "use client"
 
 import { useState } from "react"
-import { useDispatch } from "react-redux"
+import { useDispatch, useSelector } from "react-redux"
 import { useForm } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { setUser } from "@/store/slices/authSlice"
+import { setUser, setOAuthLoading } from "@/store/slices/authSlice"
 import { showSnackbar } from "@/store/slices/uiSlice"
+import { api } from "@/lib/api"
 import { Eye, EyeOff, Loader2, Mail, Lock, ArrowRight, LogIn } from "lucide-react"
 import { FaGoogle, FaFacebookF, FaApple, FaTwitter, FaGithub } from "react-icons/fa"
 
@@ -26,8 +27,10 @@ interface LoginFormProps {
 
 export default function LoginForm({ onSuccess }: LoginFormProps) {
   const dispatch = useDispatch()
+  const { isOAuthLoading, oauthProvider } = useSelector((state: any) => state.auth)
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   const {
     register,
@@ -39,23 +42,34 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true)
+    setFieldErrors({}) // Clear previous field errors
+    
     try {
-      const { api } = await import("@/lib/api")
       const res = await api.login({ email: data.email, password: data.password })
-      dispatch(setUser(res.user))
-      localStorage.setItem("userData", JSON.stringify(res.user))
-      dispatch(showSnackbar({ message: "Welcome back! Login successful", type: "success" }))
-      onSuccess?.()
+      if (res.success && res.data?.user) {
+        dispatch(setUser(res.data.user))
+        localStorage.setItem("userData", JSON.stringify(res.data.user))
+        dispatch(showSnackbar({ message: "Welcome back! Login successful", type: "success" }))
+        onSuccess?.()
+      } else {
+        throw new Error("Login failed")
+      }
     } catch (e: any) {
       let message = "Login failed"
       const raw = e?.message ?? ""
       if (raw) {
         try {
           const parsed = JSON.parse(raw)
-          const serverMsg = Array.isArray(parsed?.message)
-            ? parsed.message.join(", ")
-            : parsed?.message || parsed?.error
-          if (serverMsg) message = serverMsg
+          // Check for backend validation errors
+          if (parsed?.errors && typeof parsed.errors === 'object') {
+            setFieldErrors(parsed.errors)
+            message = parsed.message || "Validation failed"
+          } else {
+            const serverMsg = Array.isArray(parsed?.message)
+              ? parsed.message.join(", ")
+              : parsed?.message || parsed?.error
+            if (serverMsg) message = serverMsg
+          }
         } catch {
           message = raw
         }
@@ -66,20 +80,49 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
     }
   }
 
-  // Placeholder auth handlers
-  const handleGoogleLogin = () => {
-    const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1"
-    window.location.href = `${base}/auth/google`
+  // OAuth handlers
+  const handleGoogleLogin = async () => {
+    try {
+      dispatch(setOAuthLoading({ loading: true, provider: 'google' }))
+      
+      const googleAuthUrl = await api.googleAuth()
+      
+      // Redirect to Google OAuth
+      window.location.href = googleAuthUrl
+    } catch (error: any) {
+      dispatch(setOAuthLoading({ loading: false, provider: undefined }))
+      dispatch(showSnackbar({ 
+        message: error.message || "Failed to initialize Google login", 
+        type: "error" 
+      }))
+    }
   }
 
-  const handleFacebookLogin = () => {
-    const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1"
-    window.location.href = `${base}/auth/facebook`
+  const handleFacebookLogin = async () => {
+    try {
+      dispatch(setOAuthLoading({ loading: true, provider: 'facebook' }))
+      
+      const base = process.env.NEXT_PUBLIC_API_URL || "http://185.209.228.74:8080/api"
+      window.location.href = `${base}/auth/facebook`
+    } catch (error: any) {
+      dispatch(setOAuthLoading({ loading: false, provider: undefined }))
+      dispatch(showSnackbar({ 
+        message: "Failed to initialize Facebook login", 
+        type: "error" 
+      }))
+    }
   }
 
   const handleAppleLogin = () => dispatch(showSnackbar({ message: "Apple login not configured", type: "info" }))
   const handleTwitterLogin = () => dispatch(showSnackbar({ message: "Twitter login not configured", type: "info" }))
   const handleGithubLogin = () => dispatch(showSnackbar({ message: "GitHub login not configured", type: "info" }))
+
+  // Clear field errors when user starts typing
+  const handleInputChange = (field: string) => {
+    if (fieldErrors[field]) {
+      setFieldErrors(prev => ({ ...prev, [field]: "" }))
+    }
+  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -92,14 +135,20 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
             id="email"
             type="email"
             placeholder="Enter your email"
-            className="pl-12 h-12 bg-gray-800/50 border-gray-700 text-white placeholder-gray-400 rounded-xl focus:border-red-600 focus:ring-red-600/20 transition-all duration-200"
+            className={`pl-12 h-12 bg-gray-800/50 border-gray-700 text-white placeholder-gray-400 rounded-xl transition-all duration-200 ${
+              fieldErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'focus:border-red-600 focus:ring-red-600/20'
+            }`}
             {...register("email")}
+            onChange={(e) => {
+              register("email").onChange(e)
+              handleInputChange("email")
+            }}
           />
         </div>
-        {errors.email && (
+        {(errors.email || fieldErrors.email) && (
           <p className="text-red-400 text-sm flex items-center gap-1">
             <span className="w-1 h-1 bg-red-400 rounded-full" />
-            {errors.email.message}
+            {fieldErrors.email || errors.email?.message}
           </p>
         )}
       </div>
@@ -113,8 +162,14 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
             id="password"
             type={showPassword ? "text" : "password"}
             placeholder="Enter your password"
-            className="pl-12 pr-12 h-12 bg-gray-800/50 border-gray-700 text-white placeholder-gray-400 rounded-xl focus:border-red-600 focus:ring-red-600/20 transition-all duration-200"
+            className={`pl-12 pr-12 h-12 bg-gray-800/50 border-gray-700 text-white placeholder-gray-400 rounded-xl transition-all duration-200 ${
+              fieldErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'focus:border-red-600 focus:ring-red-600/20'
+            }`}
             {...register("password")}
+            onChange={(e) => {
+              register("password").onChange(e)
+              handleInputChange("password")
+            }}
           />
           <Button
             type="button"
@@ -126,10 +181,10 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
             {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
           </Button>
         </div>
-        {errors.password && (
+        {(errors.password || fieldErrors.password) && (
           <p className="text-red-400 text-sm flex items-center gap-1">
             <span className="w-1 h-1 bg-red-400 rounded-full" />
-            {errors.password.message}
+            {fieldErrors.password || errors.password?.message}
           </p>
         )}
       </div>
@@ -152,7 +207,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
       <Button
         type="submit"
         className="w-full h-12 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
-        disabled={isLoading}
+        disabled={isLoading || Object.keys(fieldErrors).length > 0}
       >
         {isLoading ? (
           <>
@@ -179,11 +234,33 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
 
       {/* Social Login Buttons (circular icons) */}
       <div className="flex items-center justify-center gap-3">
-        <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-full bg-white text-gray-900 hover:bg-gray-100" onClick={handleGoogleLogin}>
-          <FaGoogle className="h-5 w-5" />
+        <Button 
+          type="button" 
+          variant="outline" 
+          size="icon" 
+          className="h-11 w-11 rounded-full bg-white text-gray-900 hover:bg-gray-100" 
+          onClick={handleGoogleLogin}
+          disabled={isOAuthLoading && oauthProvider === 'google'}
+        >
+          {isOAuthLoading && oauthProvider === 'google' ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <FaGoogle className="h-5 w-5" />
+          )}
         </Button>
-        <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-full bg-[#1877F2] text-white hover:opacity-90 border-0" onClick={handleFacebookLogin}>
-          <FaFacebookF className="h-5 w-5" />
+        <Button 
+          type="button" 
+          variant="outline" 
+          size="icon" 
+          className="h-11 w-11 rounded-full bg-[#1877F2] text-white hover:opacity-90 border-0" 
+          onClick={handleFacebookLogin}
+          disabled={isOAuthLoading && oauthProvider === 'facebook'}
+        >
+          {isOAuthLoading && oauthProvider === 'facebook' ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <FaFacebookF className="h-5 w-5" />
+          )}
         </Button>
         <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-full bg-black text-white hover:bg-gray-900" onClick={handleAppleLogin}>
           <FaApple className="h-5 w-5" />

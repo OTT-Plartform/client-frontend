@@ -23,8 +23,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={nunito.className}>
         <ReduxProvider>          
-          <AuthBootstrap />
-          {children}
+          <AuthBootstrap>
+            {children}
+          </AuthBootstrap>
           <Snackbar />
         </ReduxProvider>
       </body>

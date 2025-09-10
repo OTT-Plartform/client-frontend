@@ -1,37 +1,152 @@
 "use client"
 
-import { useEffect } from "react"
-import { useDispatch } from "react-redux"
+import { useEffect, useState } from "react"
+import { useRouter, usePathname } from "next/navigation"
+import { useDispatch, useSelector } from "react-redux"
 import { setUser, logout } from "@/store/slices/authSlice"
-import { getStoredTokens, clearStoredTokens } from "@/lib/auth"
-import { api } from "@/lib/api"
+import { RootState } from "@/store/store"
+import { Loader2 } from "lucide-react"
 
-export default function AuthBootstrap() {
+// Routes that require authentication
+const PROTECTED_ROUTES = ["/profile", "/movies", "/series", "/movie", "/series"]
+
+// Routes that should redirect to home if user is already authenticated
+const AUTH_ROUTES = ["/login", "/register"]
+
+// Routes that should redirect to onboarding if user is not profile complete
+const ONBOARDING_ROUTES = ["/onboarding"]
+
+export default function AuthBootstrap({ children }: { children: React.ReactNode }) {
+  const router = useRouter()
+  const pathname = usePathname()
   const dispatch = useDispatch()
+  const { user, isAuthenticated } = useSelector((state: RootState) => state.auth)
+  const [isLoading, setIsLoading] = useState(true)
+
+  const isOnboardingDone = Boolean((user as any)?.onboarding_completed)
+  const isProfileDone = Boolean((user as any)?.profile_completed)
+  const isSubscribed = (user as any)?.is_subscribed !== false
 
   useEffect(() => {
-    const { accessToken } = getStoredTokens()
-    if (!accessToken) return
-
-    let cancelled = false
-    ;(async () => {
+    const initializeAuth = async () => {
       try {
-        const me = await api.me()
-        if (!cancelled) {
-          dispatch(setUser(me))
-          localStorage.setItem("userData", JSON.stringify(me))
+        // Skip auth initialization if we're on the OAuth callback page
+        if (pathname === '/auth/callback') {
+          setIsLoading(false)
+          return
         }
-      } catch (e) {
-        clearStoredTokens()
-        if (!cancelled) dispatch(logout())
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [dispatch])
 
-  return null
+        // Check if user data exists in localStorage
+        const userData = localStorage.getItem("userData")
+        const accessToken = localStorage.getItem("accessToken")
+
+        if (userData && accessToken) {
+          try {
+            // Verify token is still valid by making an API call
+            const { api } = await import("@/lib/api")
+            const profileResponse = await api.getProfile()
+            
+            if (profileResponse.success && profileResponse.data?.user) {
+              dispatch(setUser(profileResponse.data.user))
+            } else {
+              // Token is invalid, clear everything
+              localStorage.removeItem("userData")
+              localStorage.removeItem("accessToken")
+              dispatch(logout())
+            }
+          } catch (error) {
+            // API call failed, clear everything
+            localStorage.removeItem("userData")
+            localStorage.removeItem("accessToken")
+            dispatch(logout())
+          }
+        }
+      } catch (error) {
+        console.error("Auth initialization failed:", error)
+        dispatch(logout())
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    initializeAuth()
+  }, [dispatch, pathname])
+
+  useEffect(() => {
+    if (isLoading) return
+
+    // Handle route protection
+    if (PROTECTED_ROUTES.some(route => pathname.startsWith(route))) {
+      if (!isAuthenticated) {
+        router.push("/login")
+        return
+      }
+    }
+
+    // Handle auth routes (redirect if already authenticated)
+    if (AUTH_ROUTES.includes(pathname)) {
+      if (isAuthenticated) {
+        if (!isOnboardingDone) {
+          router.push("/onboarding")
+        } else if (!isSubscribed) {
+          router.push("/onboarding?step=3")
+        } else {
+          // Go to home page for authenticated users
+          router.push("/")
+        }
+        return
+      }
+    }
+
+    // Handle onboarding route
+    if (ONBOARDING_ROUTES.includes(pathname)) {
+      if (!isAuthenticated) {
+        router.push("/login")
+        return
+      }
+      if (!isOnboardingDone) {
+        // stay on onboarding
+      } else if (!isSubscribed) {
+        router.push("/onboarding?step=3")
+        return
+      } else {
+        // Go to home page after onboarding is complete
+        router.push("/")
+        return
+      }
+    }
+
+    // Handle home route redirects - only redirect if user is not fully set up
+    if (pathname === "/") {
+      if (isAuthenticated) {
+        // Only redirect if user hasn't completed essential steps
+        if (!isOnboardingDone) {
+          router.push("/onboarding")
+          return
+        }
+        // Allow users to access home page even if profile is not complete
+        // They can complete profile later from the home page
+        if (!isSubscribed) {
+          router.push("/onboarding?step=3")
+          return
+        }
+        // If user is authenticated and subscribed, let them stay on home page
+      }
+    }
+  }, [pathname, isAuthenticated, isOnboardingDone, isProfileDone, isSubscribed, isLoading, router])
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-white animate-spin mx-auto mb-4" />
+          <p className="text-white text-lg">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return <>{children}</>
 }
 
 

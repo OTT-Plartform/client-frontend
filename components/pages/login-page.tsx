@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { FaApple, FaGoogle, FaFacebookF, FaTwitter, FaGithub } from "react-icons/fa"
-import { useRouter } from "next/navigation"
-import { useDispatch } from "react-redux"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useDispatch, useSelector } from "react-redux"
 import { useForm } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
@@ -17,8 +17,10 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { setUser } from "@/store/slices/authSlice"
+import { setUser, setOAuthLoading } from "@/store/slices/authSlice"
 import { showSnackbar } from "@/store/slices/uiSlice"
+import { api } from "@/lib/api"
+import LoginSuccess from "@/components/animations/login-success"
 import {
   Eye,
   EyeOff,
@@ -42,9 +44,14 @@ type LoginFormData = yup.InferType<typeof loginSchema>
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const dispatch = useDispatch()
+  const { isOAuthLoading, oauthProvider } = useSelector((state: any) => state.auth)
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({})
+  const [showLoginSuccess, setShowLoginSuccess] = useState(false)
+  const [userName, setUserName] = useState<string>('')
 
   const {
     register,
@@ -54,33 +61,126 @@ export default function LoginPage() {
     resolver: yupResolver(loginSchema),
   })
 
+  // Handle OAuth errors from URL parameters
+  useEffect(() => {
+    const oauthError = searchParams.get('error')
+    if (oauthError === 'oauth_failed') {
+      dispatch(showSnackbar({ 
+        message: "OAuth authentication failed. Please try again.", 
+        type: "error" 
+      }))
+      // Clear the error parameter from URL
+      const url = new URL(window.location.href)
+      url.searchParams.delete('error')
+      window.history.replaceState({}, '', url.toString())
+    }
+  }, [searchParams, dispatch])
+
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true)
+    setFieldErrors({}) // Clear previous field errors
+    
     try {
       const { api } = await import("@/lib/api")
       const res = await api.login({ email: data.email, password: data.password })
-      dispatch(setUser(res.user))
-      localStorage.setItem("userData", JSON.stringify(res.user))
-      dispatch(showSnackbar({ message: "Welcome back! Login successful", type: "success" }))
-      router.push("/")
+      if (res.success && res.data?.user) {
+        dispatch(setUser(res.data.user))
+        localStorage.setItem("userData", JSON.stringify(res.data.user))
+        
+        // Set user name and show success animation
+        const user = res.data.user as any
+        setUserName(user.full_name || user.email || 'User')
+        setShowLoginSuccess(true)
+      } else {
+        throw new Error("Login failed")
+      }
     } catch (e: any) {
       let message = "Login failed"
       const raw = e?.message ?? ""
       if (raw) {
         try {
           const parsed = JSON.parse(raw)
-          const serverMsg = Array.isArray(parsed?.message)
-            ? parsed.message.join(", ")
-            : parsed?.message || parsed?.error
-          if (serverMsg) message = serverMsg
+          if (parsed.errors) {
+            // Backend validation errors
+            setFieldErrors(parsed.errors)
+            dispatch(showSnackbar({ 
+              message: parsed.message || "Please fix the validation errors", 
+              type: "error" 
+            }))
+          } else {
+            // General backend error
+            const serverMsg = Array.isArray(parsed?.message)
+              ? parsed.message.join(", ")
+              : parsed?.message || parsed?.error
+            if (serverMsg) message = serverMsg
+            dispatch(showSnackbar({ message, type: "error" }))
+          }
         } catch {
           message = raw
+          dispatch(showSnackbar({ message, type: "error" }))
         }
+      } else {
+        dispatch(showSnackbar({ message, type: "error" }))
       }
-      dispatch(showSnackbar({ message, type: "error" }))
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // OAuth handlers
+  const handleGoogleLogin = async () => {
+    try {
+      dispatch(setOAuthLoading({ loading: true, provider: 'google' }))
+      
+      const googleAuthUrl = await api.googleAuth()
+      
+      // Redirect to Google OAuth
+      window.location.href = googleAuthUrl
+    } catch (error: any) {
+      dispatch(setOAuthLoading({ loading: false, provider: undefined }))
+      dispatch(showSnackbar({ 
+        message: error.message || "Failed to initialize Google login", 
+        type: "error" 
+      }))
+    }
+  }
+
+  const handleFacebookLogin = async () => {
+    try {
+      dispatch(setOAuthLoading({ loading: true, provider: 'facebook' }))
+      
+      const base = process.env.NEXT_PUBLIC_API_URL || "http://185.209.228.74:8080/api"
+      window.location.href = `${base}/auth/facebook`
+    } catch (error: any) {
+      dispatch(setOAuthLoading({ loading: false, provider: undefined }))
+      dispatch(showSnackbar({ 
+        message: "Failed to initialize Facebook login", 
+        type: "error" 
+      }))
+    }
+  }
+
+  const handleLoginSuccessComplete = () => {
+    // Get the user data to determine redirect
+    const userData = localStorage.getItem('userData')
+    if (userData) {
+      const user = JSON.parse(userData)
+      if (!user.onboarding_completed) {
+        router.push("/onboarding")
+      } else if (user.is_subscribed === false) {
+        router.push("/onboarding?step=3")
+      } else {
+        // Go to home page for all other cases (including incomplete profile)
+        router.push("/")
+      }
+    } else {
+      router.push("/")
+    }
+  }
+
+  // Show login success animation
+  if (showLoginSuccess) {
+    return <LoginSuccess userName={userName} onComplete={handleLoginSuccessComplete} />
   }
 
   return (
@@ -139,13 +239,22 @@ export default function LoginPage() {
                         id="email"
                         type="email"
                         placeholder="Enter your email address"
-                        className="pl-14 h-14 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-2xl text-lg"
+                        className={`pl-14 h-14 bg-white/10 text-white placeholder-gray-400 rounded-2xl text-lg transition-all duration-300 ${
+                          (errors.email || fieldErrors.email) 
+                            ? "border-red-500 focus:border-red-500" 
+                            : "border-white/20 focus:border-blue-500"
+                        }`}
                         {...register("email")}
+                        onChange={(e) => {
+                          if (fieldErrors.email) {
+                            setFieldErrors(prev => ({ ...prev, email: "" }))
+                          }
+                        }}
                       />
                     </div>
-                    {errors.email && (
-                      <p className="text-blue-400 text-sm">
-                        {errors.email.message}
+                    {(errors.email || fieldErrors.email) && (
+                      <p className="text-red-400 text-sm">
+                        {errors.email?.message || fieldErrors.email}
                       </p>
                     )}
                   </div>
@@ -164,8 +273,17 @@ export default function LoginPage() {
                         id="password"
                         type={showPassword ? "text" : "password"}
                         placeholder="Enter your password"
-                        className="pl-14 pr-14 h-14 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-2xl text-lg"
+                        className={`pl-14 pr-14 h-14 bg-white/10 text-white placeholder-gray-400 rounded-2xl text-lg transition-all duration-300 ${
+                          (errors.password || fieldErrors.password) 
+                            ? "border-red-500 focus:border-red-500" 
+                            : "border-white/20 focus:border-blue-500"
+                        }`}
                         {...register("password")}
+                        onChange={(e) => {
+                          if (fieldErrors.password) {
+                            setFieldErrors(prev => ({ ...prev, password: "" }))
+                          }
+                        }}
                       />
                       <Button
                         type="button"
@@ -181,9 +299,9 @@ export default function LoginPage() {
                         )}
                       </Button>
                     </div>
-                    {errors.password && (
-                      <p className="text-blue-400 text-sm">
-                        {errors.password.message}
+                    {(errors.password || fieldErrors.password) && (
+                      <p className="text-red-400 text-sm">
+                        {errors.password?.message || fieldErrors.password}
                       </p>
                     )}
                   </div>
@@ -192,7 +310,7 @@ export default function LoginPage() {
                   <Button
                     type="submit"
                     className="w-full h-14 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-semibold text-lg rounded-2xl shadow-lg"
-                    disabled={isLoading}
+                    disabled={isLoading || Object.keys(fieldErrors).length > 0}
                   >
                     {isLoading ? (
                       <>
@@ -202,7 +320,7 @@ export default function LoginPage() {
                     ) : (
                       <>
                         Sign In
-                        <ArrowRight className="w-6 h-6 ml-3" />
+                        <ArrowRight className="w-6 h-6 ml-2" />
                       </>
                     )}
                   </Button>
@@ -221,23 +339,27 @@ export default function LoginPage() {
                     variant="outline"
                     size="icon"
                     className="h-11 w-11 rounded-full bg-white text-gray-900 hover:bg-gray-100"
-                    onClick={() => {
-                      const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1"
-                      window.location.href = `${base}/auth/google`
-                    }}
+                    onClick={handleGoogleLogin}
+                    disabled={isOAuthLoading && oauthProvider === 'google'}
                   >
-                    <FaGoogle className="h-5 w-5" />
+                    {isOAuthLoading && oauthProvider === 'google' ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <FaGoogle className="h-5 w-5" />
+                    )}
                   </Button>
                   <Button
                     variant="outline"
                     size="icon"
                     className="h-11 w-11 rounded-full bg-[#1877F2] text-white hover:opacity-90 border-0"
-                    onClick={() => {
-                      const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api/v1"
-                      window.location.href = `${base}/auth/facebook`
-                    }}
+                    onClick={handleFacebookLogin}
+                    disabled={isOAuthLoading && oauthProvider === 'facebook'}
                   >
-                    <FaFacebookF className="h-5 w-5" />
+                    {isOAuthLoading && oauthProvider === 'facebook' ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <FaFacebookF className="h-5 w-5" />
+                    )}
                   </Button>
                   <Button
                     variant="outline"

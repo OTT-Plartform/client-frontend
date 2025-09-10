@@ -19,6 +19,7 @@ import {
 import { Search, Bell, User, Settings, LogOut, Home, Film, Tv, UserPlus, ChevronDown } from "lucide-react"
 import Link from "next/link"
 import { clearStoredTokens } from "@/lib/auth"
+import { formatAvatarUrl, getUserDisplayName, getUserInitials } from "@/lib/avatar-utils"
 
 export default function Header() {
   const dispatch = useDispatch()
@@ -157,9 +158,12 @@ export default function Header() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={user?.avatar || "/placeholder.svg"} alt={user?.name} />
+                        <AvatarImage 
+                          src={formatAvatarUrl(user?.avatar) || "/placeholder.svg"} 
+                          alt={getUserDisplayName(user)} 
+                        />
                         <AvatarFallback className="bg-blue-600 text-white">
-                          {user?.name?.charAt(0).toUpperCase()}
+                          {getUserInitials(user)}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
@@ -170,8 +174,17 @@ export default function Header() {
                     forceMount
                   >
                     <div className="flex items-center justify-start gap-2 p-2">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage 
+                          src={formatAvatarUrl(user?.avatar) || "/placeholder.svg"} 
+                          alt={getUserDisplayName(user)} 
+                        />
+                        <AvatarFallback className="bg-blue-600 text-white">
+                          {getUserInitials(user)}
+                        </AvatarFallback>
+                      </Avatar>
                       <div className="flex flex-col space-y-1 leading-none">
-                        <p className="font-medium text-blue-100">{user?.name}</p>
+                        <p className="font-medium text-blue-100">{getUserDisplayName(user)}</p>
                         <p className="w-[200px] truncate text-sm text-blue-300">{user?.email}</p>
                       </div>
                     </div>
