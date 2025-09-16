@@ -14,7 +14,7 @@ This guide explains how to deploy the ZIMUSHA frontend application on Ubuntu ser
 - At least 10GB free disk space
 
 ### Backend API
-- Backend API is running at: `http://185.209.228.74:8080/api`
+- Backend API is running at: `http://ubiqent.com:8080/api`
 - Make sure the backend is accessible from your server
 
 ## Installation Steps
@@ -95,8 +95,8 @@ docker-compose logs -f zimusha-frontend
 
 The application uses the following environment variables:
 
-- `NEXT_PUBLIC_API_URL`: Backend API URL (http://185.209.228.74:8080/api)
-- `NEXT_PUBLIC_BACKEND_URL`: Backend base URL (http://185.209.228.74:8080)
+- `NEXT_PUBLIC_API_URL`: Backend API URL (http://ubiqent.com:8080/api)
+- `NEXT_PUBLIC_BACKEND_URL`: Backend base URL (http://ubiqent.com:8080)
 - `NEXT_PUBLIC_GOOGLE_CLIENT_ID`: Google OAuth client ID
 - `GOOGLE_CLIENT_SECRET`: Google OAuth client secret
 - `NEXT_PUBLIC_GOOGLE_REDIRECT_URI`: Google OAuth redirect URI
@@ -184,7 +184,7 @@ docker volume prune
 ### Backend connection issues
 ```bash
 # Test backend connectivity
-curl -I http://185.209.228.74:8080/api
+curl -I http://ubiqent.com:8080/api
 
 # Check if backend is accessible from server
 telnet 185.209.228.74 8080
@@ -275,7 +275,7 @@ docker-compose up -d
 
 For issues or questions:
 1. Check the logs: `docker-compose logs zimusha-frontend`
-2. Verify backend connectivity: `curl http://185.209.228.74:8080/api`
+2. Verify backend connectivity: `curl http://ubiqent.com:8080/api`
 3. Check Docker status: `docker-compose ps`
 4. Review this documentation
 

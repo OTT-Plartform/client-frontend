@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Search, Bell, User, Settings, LogOut, Home, Film, Tv, UserPlus, ChevronDown } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import { clearStoredTokens } from "@/lib/auth"
 import { formatAvatarUrl, getUserDisplayName, getUserInitials } from "@/lib/avatar-utils"
 
@@ -49,8 +50,8 @@ export default function Header() {
         <div className="flex items-center justify-between">
           {/* Logo and Navigation */}
           <div className="flex items-center space-x-8">
-            <Link href="/" className="text-2xl font-bold text-blue-400 hover:text-blue-200 transition-colors">
-              ZIMUSHA
+            <Link href="/" className="flex items-center">
+              <Image src="/logo.png" alt="UbiqEnt" width={120} height={32} priority className="h-8 w-auto" />
             </Link>
             <nav className="hidden md:flex items-center space-x-6">
               <Link
@@ -215,12 +216,12 @@ export default function Header() {
             ) : (
               <div className="flex items-center gap-3">
                 <Link href="/login">
-                  <Button variant="ghost" className="text-blue-100 hover:bg-blue-700">
+                  <Button variant="ghost" className="text-blue-100 hover:bg-blue-700 rounded-full px-5">
                     Sign In
                   </Button>
                 </Link>
                 <Link href="/register">
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-5">
                     <UserPlus className="w-4 h-4 mr-2" />
                     Sign Up
                   </Button>

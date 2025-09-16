@@ -31,6 +31,7 @@ import {
   ArrowLeft,
 } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 
 const loginSchema = yup.object({
   email: yup.string().email("Invalid email").required("Email is required"),
@@ -149,7 +150,7 @@ export default function LoginPage() {
     try {
       dispatch(setOAuthLoading({ loading: true, provider: 'facebook' }))
       
-      const base = process.env.NEXT_PUBLIC_API_URL || "http://185.209.228.74:8080/api"
+      const base = process.env.NEXT_PUBLIC_API_URL || "http://ubiqent.com:8080/api"
       window.location.href = `${base}/auth/facebook`
     } catch (error: any) {
       dispatch(setOAuthLoading({ loading: false, provider: undefined }))
@@ -212,11 +213,14 @@ export default function LoginPage() {
 
             <Card className="bg-black/50 border-white/20 backdrop-blur-xl shadow-2xl rounded-3xl overflow-hidden">
               <CardHeader className="text-center pb-6 pt-8">
+                <div className="flex justify-center mb-3">
+                  <Image src="/logo.png" alt="UbiqEnt" width={120} height={32} />
+                </div>
                 <CardTitle className="text-white text-3xl font-bold mb-2">
                   Sign In
                 </CardTitle>
                 <CardDescription className="text-gray-300 text-lg">
-                  Welcome back! Please sign in to your ZIMUSHA account
+                  Welcome back! Please sign in to your UbiqEnt account
                 </CardDescription>
               </CardHeader>
 
@@ -309,7 +313,7 @@ export default function LoginPage() {
                   {/* Submit */}
                   <Button
                     type="submit"
-                    className="w-full h-14 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-semibold text-lg rounded-2xl shadow-lg"
+                    className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg rounded-full shadow-lg"
                     disabled={isLoading || Object.keys(fieldErrors).length > 0}
                   >
                     {isLoading ? (

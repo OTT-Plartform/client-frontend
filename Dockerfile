@@ -18,8 +18,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Set environment variables for build
-ENV NEXT_PUBLIC_API_URL=http://185.209.228.74:8080/api
-ENV NEXT_PUBLIC_BACKEND_URL=http://185.209.228.74:8080
+ENV NEXT_PUBLIC_API_URL=http://ubiqent.com:8080/api
+ENV NEXT_PUBLIC_BACKEND_URL=http://ubiqent.com:8080
 ENV NEXT_PUBLIC_APP_NAME=ZIMUSHA
 ENV NEXT_PUBLIC_APP_URL=http://localhost:3000
 ENV NEXT_PUBLIC_FRONTEND_URL=http://localhost:3000

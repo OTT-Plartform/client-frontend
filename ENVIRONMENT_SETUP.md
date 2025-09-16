@@ -9,8 +9,8 @@ Create a `.env.local` file in the root directory with the following variables:
 ### API Configuration
 ```bash
 # API Configuration
-NEXT_PUBLIC_API_URL=http://185.209.228.74:8080/api
-NEXT_PUBLIC_BACKEND_URL=http://185.209.228.74:8080
+NEXT_PUBLIC_API_URL=http://ubiqent.com:8080/api
+NEXT_PUBLIC_BACKEND_URL=http://ubiqent.com:8080
 ```
 
 ### Google OAuth Configuration
@@ -18,7 +18,7 @@ NEXT_PUBLIC_BACKEND_URL=http://185.209.228.74:8080
 # Google OAuth Configuration
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=1039025234941-7aqg74osqoc2nigbjrmqg127ktlc9s3o.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=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
-NEXT_PUBLIC_GOOGLE_REDIRECT_URI=http://185.209.228.74:8080/api/oauth/redirect/google
+NEXT_PUBLIC_GOOGLE_REDIRECT_URI=http://ubiqent.com:8080/api/oauth/redirect/google
 ```
 
 ### App Configuration
@@ -40,13 +40,13 @@ NODE_ENV=development
 
 ```bash
 # API Configuration
-NEXT_PUBLIC_API_URL=http://185.209.228.74:8080/api
-NEXT_PUBLIC_BACKEND_URL=http://185.209.228.74:8080
+NEXT_PUBLIC_API_URL=http://ubiqent.com:8080/api
+NEXT_PUBLIC_BACKEND_URL=http://ubiqent.com:8080
 
 # Google OAuth Configuration
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=1039025234941-7aqg74osqoc2nigbjrmqg127ktlc9s3o.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=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
-NEXT_PUBLIC_GOOGLE_REDIRECT_URI=http://185.209.228.74:8080/api/oauth/redirect/google
+NEXT_PUBLIC_GOOGLE_REDIRECT_URI=http://ubiqent.com:8080/api/oauth/redirect/google
 
 # App Configuration
 NEXT_PUBLIC_APP_NAME=ZIMUSHA
@@ -73,7 +73,7 @@ NODE_ENV=development
 2. Create a new project or select an existing one
 3. Enable the Google+ API
 4. Go to Credentials → Create Credentials → OAuth 2.0 Client IDs
-5. Set the authorized redirect URIs to: `http://185.209.228.74:8080/api/oauth/redirect/google`
+5. Set the authorized redirect URIs to: `http://ubiqent.com:8080/api/oauth/redirect/google`
 6. Copy the Client ID and Client Secret to your `.env.local` file
 
 ## Restart Required

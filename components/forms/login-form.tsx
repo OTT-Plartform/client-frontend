@@ -102,7 +102,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
     try {
       dispatch(setOAuthLoading({ loading: true, provider: 'facebook' }))
       
-      const base = process.env.NEXT_PUBLIC_API_URL || "http://185.209.228.74:8080/api"
+      const base = process.env.NEXT_PUBLIC_API_URL || "http://ubiqent.com:8080/api"
       window.location.href = `${base}/auth/facebook`
     } catch (error: any) {
       dispatch(setOAuthLoading({ loading: false, provider: undefined }))

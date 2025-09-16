@@ -14,6 +14,7 @@ import { Mail, Lock, Home, Loader2, Play, Crown, Users } from "lucide-react"
 import { useSelector } from "react-redux"
 import { RootState } from "@/store/store"
 import Link from "next/link"
+import Image from "next/image"
 import * as yup from "yup"
 
 export default function RegisterPage() {
@@ -106,7 +107,7 @@ export default function RegisterPage() {
         const googleAuthUrl = await api.googleAuth()
         window.location.href = googleAuthUrl
       } else if (provider === 'facebook') {
-        const base = process.env.NEXT_PUBLIC_API_URL || "http://185.209.228.74:8080/api"
+        const base = process.env.NEXT_PUBLIC_API_URL || "http://ubiqent.com:8080/api"
         window.location.href = `${base}/auth/facebook`
       }
     } catch (error: any) {
@@ -148,8 +149,8 @@ export default function RegisterPage() {
             {/* Left Side - Engaging Content */}
             <div className="text-center lg:text-left">
               <div className="mb-6">
-                <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-white font-bold text-3xl">ZIMUSHA</span>
+                <div className="flex items-center justify-center lg:justify-start mb-4">
+                  <Image src="/logo.png" alt="UbiqEnt" width={140} height={36} />
                 </div>
                 <h1 className="text-white text-4xl lg:text-5xl font-bold mb-4 leading-tight">
                   Welcome to the Future of
@@ -240,10 +241,9 @@ export default function RegisterPage() {
             {/* Right Side - Registration Form */}
             <div className="flex justify-center lg:justify-end h-full">
               <Card className="bg-black/40 border-white/20 backdrop-blur-xl shadow-2xl rounded-3xl overflow-hidden w-full max-w-lg h-full flex flex-col">
-                            <CardHeader className="text-center pb-6 pt-8">
-                </CardHeader>
+                
 
-            <CardContent className="px-8 pb-8 flex-1 flex flex-col justify-center">
+            <CardContent className="px-8 pb-8 flex-1 flex flex-col justify-center mt-3">
               {/* OAuth Buttons */}
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <Button
@@ -365,7 +365,7 @@ export default function RegisterPage() {
                 <Button
                   type="submit"
                   disabled={isLoading || Object.keys(errors).length > 0 || !formData.email || !formData.password || !formData.passwordConfirmation}
-                  className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl text-lg font-semibold shadow-lg"
+                  className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-lg font-semibold shadow-lg"
                 >
                   {isLoading ? (
                     <>

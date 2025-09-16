@@ -65,7 +65,7 @@ sleep 10
 if docker-compose ps | grep -q "zimusha-frontend.*Up"; then
     print_success "ZIMUSHA Frontend is running successfully!"
     print_status "Application is available at: http://localhost (port 80)"
-    print_status "Backend API: http://185.209.228.74:8080/api"
+    print_status "Backend API: http://ubiqent.com:8080/api"
     
     # Show container status
     print_status "Container Status:"
