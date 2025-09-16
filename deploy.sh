@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# ZIMUSHA Frontend Deployment Script
-# This script deploys the ZIMUSHA frontend application using Docker
+# UbiqEnt Frontend Deployment Script
+# This script deploys the UbiqEnt frontend application using Docker
 
 set -e
 
-echo "🚀 Starting ZIMUSHA Frontend Deployment..."
+echo "🚀 Starting UbiqEnt Frontend Deployment..."
 
 # Colors for output
 RED='\033[0;31m'
@@ -51,7 +51,7 @@ docker-compose down --remove-orphans || true
 
 # Remove existing images to force rebuild
 print_status "Removing existing images..."
-docker rmi zimusha-frontend || true
+docker rmi ubiqent-frontend || true
 
 # Build and start the application
 print_status "Building and starting the application..."
@@ -62,8 +62,8 @@ print_status "Waiting for application to start..."
 sleep 10
 
 # Check if the application is running
-if docker-compose ps | grep -q "zimusha-frontend.*Up"; then
-    print_success "ZIMUSHA Frontend is running successfully!"
+if docker-compose ps | grep -q "ubiqent-frontend.*Up"; then
+    print_success "UbiqEnt Frontend is running successfully!"
     print_status "Application is available at: http://localhost (port 80)"
     print_status "Backend API: http://ubiqent.com:8080/api"
     
@@ -73,11 +73,11 @@ if docker-compose ps | grep -q "zimusha-frontend.*Up"; then
     
     # Show logs
     print_status "Recent logs:"
-    docker-compose logs --tail=20 zimusha-frontend
+    docker-compose logs --tail=20 ubiqent-frontend
 else
     print_error "Failed to start the application"
     print_status "Checking logs for errors:"
-    docker-compose logs zimusha-frontend
+    docker-compose logs ubiqent-frontend
     exit 1
 fi
 
