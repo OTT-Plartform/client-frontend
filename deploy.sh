@@ -37,17 +37,22 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-# Check if Docker Compose is installed
-if ! command -v docker-compose &> /dev/null; then
-    print_error "Docker Compose is not installed. Please install Docker Compose first."
+# Determine compose command (Docker Compose v2 uses `docker compose`)
+if docker compose version &> /dev/null; then
+    COMPOSE_CMD="docker compose"
+elif command -v docker-compose &> /dev/null; then
+    COMPOSE_CMD="docker-compose"
+else
+    print_error "Docker Compose is not installed. Install plugin: https://docs.docker.com/compose/install/linux/"
+    echo "\nQuick install on Ubuntu:\n  sudo apt-get update && sudo apt-get install -y docker-compose-plugin\n"
     exit 1
 fi
 
-print_status "Docker and Docker Compose are available"
+print_status "Docker and Docker Compose are available (${COMPOSE_CMD})"
 
 # Stop and remove existing containers
 print_status "Stopping existing containers..."
-docker-compose down --remove-orphans || true
+${COMPOSE_CMD} down --remove-orphans || true
 
 # Remove existing images to force rebuild
 print_status "Removing existing images..."
@@ -55,29 +60,29 @@ docker rmi ubiqent-frontend || true
 
 # Build and start the application
 print_status "Building and starting the application..."
-docker-compose up --build -d
+${COMPOSE_CMD} up --build -d
 
 # Wait for the application to start
 print_status "Waiting for application to start..."
 sleep 10
 
 # Check if the application is running
-if docker-compose ps | grep -q "ubiqent-frontend.*Up"; then
+if ${COMPOSE_CMD} ps | grep -q "ubiqent-frontend.*Up"; then
     print_success "UbiqEnt Frontend is running successfully!"
     print_status "Application is available at: http://localhost (port 80)"
     print_status "Backend API: http://ubiqent.com:8080/api"
     
     # Show container status
     print_status "Container Status:"
-    docker-compose ps
+    ${COMPOSE_CMD} ps
     
     # Show logs
     print_status "Recent logs:"
-    docker-compose logs --tail=20 ubiqent-frontend
+    ${COMPOSE_CMD} logs --tail=20 ubiqent-frontend
 else
     print_error "Failed to start the application"
     print_status "Checking logs for errors:"
-    docker-compose logs ubiqent-frontend
+    ${COMPOSE_CMD} logs ubiqent-frontend
     exit 1
 fi
 
