@@ -31,6 +31,7 @@ import {
 
 import { useRouter } from "next/navigation"
 import EditProfileModal from "@/components/modals/edit-profile-modal"
+import { api } from "@/lib/api"
 
 export default function ProfilePage() {
   const { user } = useSelector((state: RootState) => state.auth)
@@ -38,12 +39,32 @@ export default function ProfilePage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("personal")
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [devices, setDevices] = useState<any[] | null>(null)
+  const [devicesLoading, setDevicesLoading] = useState(false)
+  const [deviceStats, setDeviceStats] = useState<any | null>(null)
 
   useEffect(() => {
     if (!isAuthenticated) {
       router.replace("/login")
     }
   }, [isAuthenticated, router])
+
+  useEffect(() => {
+    const fetchDevices = async () => {
+      try {
+        setDevicesLoading(true)
+        const [listRes, statsRes] = await Promise.all([
+          api.listDevices().catch(() => null),
+          api.getDeviceStats().catch(() => null),
+        ])
+        setDevices(listRes?.data?.devices || [])
+        setDeviceStats(statsRes?.data?.stats || null)
+      } finally {
+        setDevicesLoading(false)
+      }
+    }
+    fetchDevices()
+  }, [])
 
   // Derive profile data from Redux user without additional fetches
   const profileData: any = user || {}
@@ -453,31 +474,58 @@ export default function ProfilePage() {
                   <CardDescription className="text-gray-300">Manage devices connected to your account</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {[
-                    { name: "iPhone 14 Pro", location: "Harare, ZW", lastActive: "2 minutes ago", current: true },
-                    { name: "MacBook Pro", location: "Harare, ZW", lastActive: "1 hour ago", current: false },
-                    { name: "Samsung TV", location: "Harare, ZW", lastActive: "3 days ago", current: false }
-                  ].map((device, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 border border-gray-600 rounded-xl bg-gray-800/50">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-gray-700 rounded-xl flex items-center justify-center">
-                          <Smartphone className="w-6 h-6 text-gray-300" />
+                  {devicesLoading ? (
+                    <p className="text-gray-400">Loading devices...</p>
+                  ) : devices && devices.length > 0 ? (
+                    <>
+                      {deviceStats ? (
+                        <div className="flex flex-wrap gap-3 mb-2">
+                          <Badge className="bg-blue-600/30 text-blue-200">Total: {deviceStats.total_devices}</Badge>
+                          <Badge className="bg-green-600/30 text-green-200">Active: {deviceStats.active_devices}</Badge>
                         </div>
-                        <div>
-                          <h4 className="font-medium text-white">{device.name}</h4>
-                          <p className="text-sm text-gray-300">{device.location} • {device.lastActive}</p>
+                      ) : null}
+                      {devices.map((d: any) => (
+                        <div key={d.id} className="flex items-center justify-between p-4 border border-gray-600 rounded-xl bg-gray-800/50">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-gray-700 rounded-xl flex items-center justify-center">
+                              <Smartphone className="w-6 h-6 text-gray-300" />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-white">{d.device_name || d.device_model || d.device_type}</h4>
+                              <p className="text-sm text-gray-300">
+                                {d.device_type} • {d.os_name} {d.os_version || ""} • Last used: {d.last_used_at ? new Date(d.last_used_at).toLocaleString() : "-"}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {d.is_active ? (
+                              <Badge className="bg-green-600 text-white">Active</Badge>
+                            ) : (
+                              <Badge className="bg-gray-600 text-white">Inactive</Badge>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-400 border-red-500 hover:bg-red-900/20"
+                              onClick={async () => {
+                                try {
+                                  await api.deactivateDevice(Number(d.id), { device_identifier: d.device_identifier })
+                                  const updated = await api.listDevices()
+                                  setDevices(updated?.data?.devices || [])
+                                } catch (e) {
+                                  // no-op, ideally show toast
+                                }
+                              }}
+                            >
+                              Remove
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {device.current && (
-                          <Badge className="bg-green-600 text-white">Current</Badge>
-                        )}
-                        <Button variant="outline" size="sm" className="text-red-400 border-red-500 hover:bg-red-900/20">
-                          Remove
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                      ))}
+                    </>
+                  ) : (
+                    <p className="text-gray-400">No devices found.</p>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

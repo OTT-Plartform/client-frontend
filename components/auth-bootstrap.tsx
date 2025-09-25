@@ -116,21 +116,14 @@ export default function AuthBootstrap({ children }: { children: React.ReactNode 
       }
     }
 
-    // Handle home route redirects - only redirect if user is not fully set up
-    if (pathname === "/") {
-      if (isAuthenticated) {
-        // Only redirect if user hasn't completed essential steps
-        if (!isOnboardingDone) {
-          router.push("/onboarding")
+    // Enforce profile selection on client as a fallback to middleware
+    if (isAuthenticated) {
+      if (isOnboardingDone && isSubscribed) {
+        const activeProfileId = typeof window !== 'undefined' ? (localStorage.getItem('activeProfileId') || document.cookie.split('; ').find(c => c.startsWith('activeProfileId='))?.split('=')[1]) : null
+        if (!activeProfileId && pathname !== '/profiles') {
+          router.push('/profiles')
           return
         }
-        // Allow users to access home page even if profile is not complete
-        // They can complete profile later from the home page
-        if (!isSubscribed) {
-          router.push("/onboarding?step=3")
-          return
-        }
-        // If user is authenticated and subscribed, let them stay on home page
       }
     }
   }, [pathname, isAuthenticated, isOnboardingDone, isProfileDone, isSubscribed, isLoading, router])

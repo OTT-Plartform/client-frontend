@@ -226,7 +226,6 @@ export default function OnboardingPage() {
   const [selectedPhoneCountry, setSelectedPhoneCountry] = useState(africanCountries.find(c => c.code === "ZW") || africanCountries[0])
   const [datePickerOpen, setDatePickerOpen] = useState(false)
   const [backendPlans, setBackendPlans] = useState<any[] | null>(null)
-  const [backendGenres, setBackendGenres] = useState<any[] | null>(null)
   const [backendPaymentMethods, setBackendPaymentMethods] = useState<any[] | null>(null)
 
   useEffect(() => {
@@ -241,12 +240,6 @@ export default function OnboardingPage() {
           setBackendPlans(plansResponse.data.subscription_plans)
         }
         
-        // Fetch genres
-        const genresResponse = await api.getGenres()
-        if (genresResponse.success && genresResponse.data?.genres) {
-          setBackendGenres(genresResponse.data.genres)
-        }
-
         // Fetch payment methods
         const paymentResponse = await api.getPaymentMethods()
         if (paymentResponse.success && paymentResponse.data?.methods) {
@@ -261,7 +254,7 @@ export default function OnboardingPage() {
     fetchData()
   }, [])
 
-  const totalSteps = 3
+  const totalSteps = 2
 
   const updatePersonalInfo = (field: string, value: string) => {
     setOnboardingData((prev) => ({
@@ -270,14 +263,7 @@ export default function OnboardingPage() {
     }))
   }
 
-  const toggleInterest = (genreId: number) => {
-    setOnboardingData((prev) => ({
-      ...prev,
-      interests: prev.interests.includes(genreId)
-        ? prev.interests.filter((id) => id !== genreId)
-        : [...prev.interests, genreId],
-    }))
-  }
+  // Interests step removed
 
   const handlePlanSelect = (planId: number) => {
     setOnboardingData((prev) => ({ ...prev, selectedPlan: planId }))
@@ -315,9 +301,6 @@ export default function OnboardingPage() {
           bio: onboardingData.personalInfo.bio || undefined,
         })
 
-      // Step 2: Save genres
-      await api.saveGenres({ genre_ids: onboardingData.interests })
-
       // Redirect to checkout with selected plan data
       router.push(`/checkout?plan=${onboardingData.selectedPlan}&period=${onboardingData.subscriptionPeriod}&payment=${onboardingData.paymentMethod}`)
     } catch (e: any) {
@@ -345,25 +328,11 @@ export default function OnboardingPage() {
   const selectedPlan = (backendPlans || fallbackPlans).find((p: any) => p.id === onboardingData.selectedPlan)
   const selectedPayment = (backendPaymentMethods || paymentMethods).find((p: any) => p.key === onboardingData.paymentMethod)
   const getStepIcon = (step: number) => {
-    const icons = [User, Heart, Crown]
+    const icons = [User, Crown]
     const Icon = icons[step - 1]
     return <Icon className="w-5 h-5" />
   }
-  // Use backend data if available, fallback to static data
-  const genres = backendGenres || [
-    { id: 1, name: "Drama", icon: "���" },
-    { id: 2, name: "Comedy", icon: "���" },
-    { id: 3, name: "Action", icon: "⚡" },
-    { id: 4, name: "Romance", icon: "���" },
-    { id: 5, name: "Thriller", icon: "���️" },
-    { id: 6, name: "Documentary", icon: "���" },
-    { id: 7, name: "Music", icon: "���" },
-    { id: 8, name: "Talk Shows", icon: "���" },
-    { id: 9, name: "Podcasts", icon: "���" },
-    { id: 10, name: "Spiritual", icon: "⛪" },
-    { id: 11, name: "Cultural", icon: "���" },
-    { id: 12, name: "Educational", icon: "���" },
-  ]
+  // Interests step removed
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden">
@@ -415,7 +384,7 @@ export default function OnboardingPage() {
                   const stepNumber = i + 1
                   const isCompleted = stepNumber < currentStep
                   const isCurrent = stepNumber === currentStep
-                  const stepLabels = ["Personal Info", "Your Interests", "Choose Plan"]
+                  const stepLabels = ["Personal Info", "Choose Plan"]
 
                   return (
                     <div key={i} className="flex flex-col items-center">
@@ -473,13 +442,11 @@ export default function OnboardingPage() {
               </div> */}
               <CardTitle className="text-white text-3xl font-bold mb-2">
                 {currentStep === 1 && "Personal Information"}
-                {currentStep === 2 && "Your Interests"}
-                {currentStep === 3 && "Choose Your Plan"}
+                {currentStep === 2 && "Choose Your Plan"}
               </CardTitle>
               <CardDescription className="text-gray-300 text-lg">
                 {currentStep === 1 && "Tell us about yourself"}
-                {currentStep === 2 && "What content do you enjoy?"}
-                {currentStep === 3 && "Select the perfect plan for you"}
+                {currentStep === 2 && "Select the perfect plan for you"}
               </CardDescription>
             </CardHeader>
 
@@ -639,47 +606,8 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {/* Step 2: Interests */}
+              {/* Step 2: Plan Selection */}
               {currentStep === 2 && (
-                <div className="space-y-8">
-                  <p className="text-gray-300 text-center text-lg">
-                    Select your favorite genres to get personalized recommendations
-                  </p>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {genres.map((genre) => {
-                      const isSelected = onboardingData.interests.includes(genre.id)
-                      return (
-                        <button
-                          key={genre.id}
-                          onClick={() => toggleInterest(genre.id)}
-                          className={`p-6 rounded-2xl border-2 transition-all duration-300 transform hover:scale-105 ${
-                            isSelected
-                              ? "border-blue-600 bg-gradient-to-br from-blue-600/20 to-purple-600/20 text-white shadow-lg"
-                              : "border-white/20 bg-white/5 text-gray-300 hover:border-white/40 hover:bg-white/10"
-                          }`}
-                        >
-                          <div className="text-center">
-                            <div className="mb-3">
-                              <div
-                                className={`w-12 h-12 rounded-full mx-auto flex items-center justify-center text-2xl ${
-                                  isSelected ? "bg-gradient-to-r from-blue-500 to-purple-600" : "bg-gray-600"
-                                }`}
-                              >
-                                {genre.icon}
-                              </div>
-                            </div>
-                            <p className="font-semibold text-lg">{genre.name}</p>
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </div>
-                  <p className="text-gray-400 text-center">Selected: {onboardingData.interests.length} interests</p>
-                </div>
-              )}
-
-              {/* Step 3: Plan Selection */}
-              {currentStep === 3 && (
                 <div className="space-y-8">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {(backendPlans || fallbackPlans).map((plan: any) => {
@@ -827,8 +755,7 @@ export default function OnboardingPage() {
                           !onboardingData.personalInfo.dateOfBirth ||
                           !onboardingData.personalInfo.country ||
                           !onboardingData.personalInfo.city)) ||
-                      (currentStep === 2 && onboardingData.interests.length === 0) ||
-                      (currentStep === 3 && !onboardingData.paymentMethod)
+                      (currentStep === 2 && !onboardingData.paymentMethod)
                     }
                   >
                     Next

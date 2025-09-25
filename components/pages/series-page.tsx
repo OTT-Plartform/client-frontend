@@ -8,7 +8,7 @@ import Header from "@/components/layout/header"
 import ContentGrid from "@/components/sections/content-grid"
 import ContentFilters from "@/components/sections/content-filters"
 import VideoModal from "@/components/modals/video-modal"
-import { mockSeries } from "@/lib/mock-data"
+import { mockContent } from "@/lib/mock-data"
 
 export default function SeriesPage() {
   const dispatch = useDispatch()
@@ -23,51 +23,59 @@ export default function SeriesPage() {
   })
 
   useEffect(() => {
-    dispatch(setContent(mockSeries))
+    dispatch(setContent(mockContent))
   }, [dispatch])
 
   const filteredSeries = useMemo(() => {
-    let filtered = mockSeries.filter((series) => series.type === "series")
+    const list = Array.isArray(mockContent) ? mockContent : []
+    let filtered = list.filter((item: any) => item?.type === "series")
 
     if (filters.searchQuery) {
-      filtered = filtered.filter(
-        (series) =>
-          series.title.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
-          series.description.toLowerCase().includes(filters.searchQuery.toLowerCase()),
-      )
+      const q = filters.searchQuery.toLowerCase()
+      filtered = filtered.filter((series: any) => (series?.title || "").toLowerCase().includes(q))
     }
 
     if (filters.genre !== "all") {
-      filtered = filtered.filter((series) => series.genres?.includes(filters.genre) || series.genre === filters.genre)
+      filtered = filtered.filter((series: any) => {
+        const fromArray = Array.isArray(series?.genres) && series.genres.includes(filters.genre)
+        const fromSingle = typeof series?.genre === "string" && series.genre === filters.genre
+        return fromArray || fromSingle
+      })
     }
 
     if (filters.year !== "all") {
-      const yearRange = filters.year.split("-")
-      if (yearRange.length === 2) {
-        const startYear = Number.parseInt(yearRange[0])
-        const endYear = Number.parseInt(yearRange[1])
-        filtered = filtered.filter((series) => series.year >= startYear && series.year <= endYear)
-      } else {
-        filtered = filtered.filter((series) => series.year.toString() === filters.year)
-      }
+      filtered = filtered.filter((series: any) => {
+        const yearValue = Number.parseInt(String(series?.year ?? ""))
+        if (!Number.isFinite(yearValue)) return false
+        const parts = filters.year.split("-")
+        if (parts.length === 2) {
+          const start = Number.parseInt(parts[0])
+          const end = Number.parseInt(parts[1])
+          if (Number.isFinite(start) && Number.isFinite(end)) {
+            return yearValue >= start && yearValue <= end
+          }
+          return true
+        }
+        return String(yearValue) === filters.year
+      })
     }
 
     if (filters.rating !== "all") {
-      filtered = filtered.filter((series) => series.rating === filters.rating)
+      filtered = filtered.filter((series: any) => series?.rating === filters.rating)
     }
 
     switch (filters.sortBy) {
       case "title":
-        filtered.sort((a, b) => a.title.localeCompare(b.title))
+        filtered.sort((a: any, b: any) => (a?.title || "").localeCompare(b?.title || ""))
         break
       case "year":
-        filtered.sort((a, b) => b.year - a.year)
+        filtered.sort((a: any, b: any) => (b?.year || 0) - (a?.year || 0))
         break
       case "rating":
-        filtered.sort((a, b) => b.match - a.match)
+        filtered.sort((a: any, b: any) => (b?.match || 0) - (a?.match || 0))
         break
       default:
-        filtered.sort((a, b) => b.match - a.match)
+        filtered.sort((a: any, b: any) => (b?.match || 0) - (a?.match || 0))
     }
 
     return filtered

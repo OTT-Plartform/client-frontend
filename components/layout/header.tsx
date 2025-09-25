@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Search, Bell, User, Settings, LogOut, Home, Film, Tv, UserPlus, ChevronDown } from "lucide-react"
+import { Search, Bell, User, Settings, LogOut, Home, Film, Tv, UserPlus, ChevronDown, Users } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { clearStoredTokens } from "@/lib/auth"
@@ -189,6 +189,13 @@ export default function Header() {
                         <p className="w-[200px] truncate text-sm text-blue-300">{user?.email}</p>
                       </div>
                     </div>
+                    <DropdownMenuSeparator className="bg-blue-700" />
+                    <DropdownMenuItem asChild className="text-blue-100 hover:bg-blue-700">
+                      <Link href="/profiles" className="flex items-center gap-2">
+                        <Users className="w-4 h-4" />
+                        Select Profile
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator className="bg-blue-700" />
                     <DropdownMenuItem asChild className="text-blue-100 hover:bg-blue-700">
                       <Link href="/profile" className="flex items-center gap-2">

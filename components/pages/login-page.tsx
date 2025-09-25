@@ -77,13 +77,51 @@ export default function LoginPage() {
     }
   }, [searchParams, dispatch])
 
+  const computeDeviceInfo = () => {
+    try {
+      const userAgent = navigator.userAgent || ""
+      const isMobile = /Mobi|Android/i.test(userAgent)
+      const isTablet = /iPad|Tablet/i.test(userAgent)
+      let device_type = isMobile ? "mobile" : isTablet ? "tablet" : "desktop"
+      const device_name = navigator.platform || "web"
+      const device_model = navigator.vendor || "browser"
+      const os_name = (navigator as any).userAgentData?.platform || navigator.platform || "unknown"
+      const os_version = ""
+      const app_version = process.env.NEXT_PUBLIC_APP_VERSION || "web"
+      const screen_resolution = typeof window !== 'undefined' ? `${window.screen.width}x${window.screen.height}` : undefined
+      const key = "device_identifier"
+      let device_identifier = localStorage.getItem(key) || ""
+      if (!device_identifier) {
+        device_identifier = crypto?.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`
+        localStorage.setItem(key, device_identifier)
+      }
+      return {
+        device_name,
+        device_type,
+        device_identifier,
+        device_model,
+        os_name,
+        os_version,
+        app_version,
+        device_metadata: {
+          user_agent: userAgent,
+          screen_resolution,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
+      }
+    } catch {
+      return {}
+    }
+  }
+
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true)
     setFieldErrors({}) // Clear previous field errors
     
     try {
       const { api } = await import("@/lib/api")
-      const res = await api.login({ email: data.email, password: data.password })
+      const deviceInfo = computeDeviceInfo()
+      const res = await api.login({ email: data.email, password: data.password, ...deviceInfo })
       if (res.success && res.data?.user) {
         dispatch(setUser(res.data.user))
         localStorage.setItem("userData", JSON.stringify(res.data.user))
@@ -169,10 +207,14 @@ export default function LoginPage() {
       if (!user.onboarding_completed) {
         router.push("/onboarding")
       } else if (user.is_subscribed === false) {
-        router.push("/onboarding?step=3")
+        router.push("/onboarding?step=2")
       } else {
-        // Go to home page for all other cases (including incomplete profile)
-        router.push("/")
+        const activeProfileId = localStorage.getItem("activeProfileId")
+        if (!activeProfileId) {
+          router.push("/profiles")
+        } else {
+          router.push("/")
+        }
       }
     } else {
       router.push("/")

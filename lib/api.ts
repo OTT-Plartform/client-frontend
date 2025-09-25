@@ -45,6 +45,32 @@ async function refreshAccessToken(): Promise<string | null> {
   return refreshPromise
 }
 
+let activeProfileId: number | null = null
+
+export function setActiveProfileId(profileId: number | null) {
+  activeProfileId = profileId
+  if (typeof window !== "undefined") {
+    if (profileId) localStorage.setItem("activeProfileId", String(profileId))
+    else localStorage.removeItem("activeProfileId")
+    try {
+      if (profileId) {
+        document.cookie = `activeProfileId=${String(profileId)}; Path=/; SameSite=Lax`
+      } else {
+        document.cookie = `activeProfileId=; Path=/; Max-Age=0; SameSite=Lax`
+      }
+    } catch {}
+  }
+}
+
+function getActiveProfileIdFromStorage(): number | null {
+  if (activeProfileId !== null) return activeProfileId
+  if (typeof window === "undefined") return null
+  const raw = localStorage.getItem("activeProfileId")
+  if (!raw) return null
+  const parsed = Number(raw)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
 async function authorizedFetch(input: RequestInfo | URL, init: RequestInit = {}, retry = true): Promise<Response> {
   const { accessToken } = getStoredTokens()
   const headers: Record<string, string> = {
@@ -53,6 +79,10 @@ async function authorizedFetch(input: RequestInfo | URL, init: RequestInit = {},
   }
   if (accessToken) {
     headers["Authorization"] = `Bearer ${accessToken}`
+  }
+  const profileId = getActiveProfileIdFromStorage()
+  if (profileId) {
+    headers["X-Profile-Id"] = String(profileId)
   }
   
   // Don't set Content-Type for FormData, let the browser set it with boundary
@@ -98,7 +128,7 @@ export interface ApiResponse<T = any> {
 export const api = {
   baseUrl: getBaseUrl(),
 
-  async login(payload: { email: string; password: string }): Promise<AuthResponseDto> {
+  async login(payload: { email: string; password: string; device_name?: string; device_type?: string; device_identifier?: string; device_model?: string; os_name?: string; os_version?: string; app_version?: string; device_metadata?: Record<string, any>; profile_id?: number }): Promise<AuthResponseDto> {
     const res = await fetch(`${getBaseUrl()}/login`, {
       method: "POST",
       headers: { 
@@ -111,7 +141,14 @@ export const api = {
     const data = (await res.json()) as AuthResponseDto
     if (data.success && data.data.token) {
       setStoredTokens({ accessToken: data.data.token, refreshToken: null })
+      try {
+        if (typeof document !== "undefined") {
+          document.cookie = `accessToken=${encodeURIComponent(data.data.token)}; Path=/; SameSite=Lax`
+        }
+      } catch {}
     }
+    const currentProfileId = (data as any)?.data?.current_profile_id
+    if (currentProfileId) setActiveProfileId(Number(currentProfileId))
     return data
   },
 
@@ -266,6 +303,70 @@ export const api = {
 
   async getPaymentMethods(): Promise<ApiResponse> {
     const res = await authorizedFetch(`${getBaseUrl()}/payments/methods`, { method: "GET" })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
+  },
+
+  // Profiles API
+  async listProfiles(): Promise<ApiResponse<{ profiles: any[] }>> {
+    const res = await authorizedFetch(`${getBaseUrl()}/profiles`, { method: "GET" })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
+  },
+  async createProfile(body: any): Promise<ApiResponse<{ profile: any }>> {
+    const res = await authorizedFetch(`${getBaseUrl()}/profiles`, { method: "POST", body: JSON.stringify(body) })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
+  },
+  async getProfileById(profileId: number): Promise<ApiResponse<{ profile: any }>> {
+    const res = await authorizedFetch(`${getBaseUrl()}/profiles/${profileId}`, { method: "GET" })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
+  },
+  async updateProfileById(profileId: number, body: any): Promise<ApiResponse<{ profile: any }>> {
+    const res = await authorizedFetch(`${getBaseUrl()}/profiles/${profileId}`, { method: "PUT", body: JSON.stringify(body) })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
+  },
+  async deleteProfile(profileId: number): Promise<ApiResponse> {
+    const res = await authorizedFetch(`${getBaseUrl()}/profiles/${profileId}`, { method: "DELETE" })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
+  },
+  async setPrimaryProfile(profileId: number): Promise<ApiResponse> {
+    const res = await authorizedFetch(`${getBaseUrl()}/profiles/${profileId}/set-primary`, { method: "POST" })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
+  },
+  async getProfileWatchHistory(profileId: number): Promise<ApiResponse> {
+    const res = await authorizedFetch(`${getBaseUrl()}/profiles/${profileId}/watch-history`, { method: "GET" })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
+  },
+
+  // Devices API
+  async registerDevice(body: any): Promise<ApiResponse<{ device: any }>> {
+    const res = await authorizedFetch(`${getBaseUrl()}/devices/register`, { method: "POST", body: JSON.stringify(body) })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
+  },
+  async listDevices(): Promise<ApiResponse<{ devices: any[] }>> {
+    const res = await authorizedFetch(`${getBaseUrl()}/devices`, { method: "GET" })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
+  },
+  async updateDevice(deviceId: number, body: any): Promise<ApiResponse<{ device: any }>> {
+    const res = await authorizedFetch(`${getBaseUrl()}/devices/${deviceId}`, { method: "PUT", body: JSON.stringify(body) })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
+  },
+  async deactivateDevice(deviceId: number, body: { device_identifier: string }): Promise<ApiResponse> {
+    const res = await authorizedFetch(`${getBaseUrl()}/devices/${deviceId}`, { method: "DELETE", body: JSON.stringify(body) })
+    if (!res.ok) throw new Error(await res.text())
+    return res.json()
+  },
+  async getDeviceStats(): Promise<ApiResponse<{ stats: any }>> {
+    const res = await authorizedFetch(`${getBaseUrl()}/devices/stats`, { method: "GET" })
     if (!res.ok) throw new Error(await res.text())
     return res.json()
   },
