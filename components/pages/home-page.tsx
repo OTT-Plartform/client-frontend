@@ -10,6 +10,7 @@ import ContentRow from "@/components/sections/content-row"
 import VideoModal from "@/components/modals/video-modal"
 import EpisodesSection from "@/components/sections/episodes-section"
 import AuthModal from "@/components/modals/auth-modal"
+import Footer from "@/components/layout/footer"   // 👈 import your footer
 import { mockContent, mockTrending, mockRecommended } from "@/lib/mock-data"
 
 export default function HomePage() {
@@ -45,11 +46,11 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-950 via-blue-900 to-black text-blue-100">
+    <div className="min-h-screen bg-gradient-to-b from-blue-950 via-blue-900 to-black text-blue-100 flex flex-col">
       {/* Sticky header with blur */}
       <Header />
 
-      <main>
+      <main className="flex-1">
         {/* Hero section */}
         <HeroSection onPlayVideo={handleVideoSelect} />
 
@@ -66,6 +67,14 @@ export default function HomePage() {
             title="⭐ Recommended For You"
             titleClass="text-2xl font-bold text-blue-100 mb-4"
             content={recommended}
+            onVideoSelect={handleVideoSelect}
+            onShowEpisodes={handleShowEpisodes}
+          />
+          {/* 🆕 New on UbiqEnt */}
+          <ContentRow
+            title="🆕 New on UbiqEnt"
+            titleClass="text-2xl font-bold text-blue-100 mb-4"
+            content={content.filter((item) => item.isNew)}
             onVideoSelect={handleVideoSelect}
             onShowEpisodes={handleShowEpisodes}
           />
@@ -103,15 +112,17 @@ export default function HomePage() {
 
       {/* Episodes Modal */}
       {selectedSeries && (
-  <div className="px-2 md:px-6">
-    <EpisodesSection
-      series={selectedSeries}
-      onClose={() => setSelectedSeries(null)}
-      onPlayEpisode={handleVideoSelect}
-    />
-  </div>
-)}
+        <div className="px-2 md:px-6">
+          <EpisodesSection
+            series={selectedSeries}
+            onClose={() => setSelectedSeries(null)}
+            onPlayEpisode={handleVideoSelect}
+          />
+        </div>
+      )}
 
+      {/* 👇 Footer at bottom */}
+      <Footer />
     </div>
   )
 }

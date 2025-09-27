@@ -341,10 +341,8 @@ export default function WelcomePage() {
         </Link>
       </section>
 
-      {/* Footer */}
-      <footer className="text-center py-8 text-sm text-blue-300 border-t border-blue-800">
-        © {new Date().getFullYear()} UbiqEnt · All rights reserved
-      </footer>
+      {/* 👇 Footer at bottom */}
+      <Footer />
     </div>
   )
 }
