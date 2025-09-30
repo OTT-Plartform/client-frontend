@@ -199,9 +199,93 @@ export default function Header() {
           </form>
 
           {/* User Menu */}
-          {/* ...the rest of the user menu stays the same */}
+          {/* User Menu */}
+          <div className="flex items-center space-x-4">
+            {isAuthenticated ? (
+              <>
+                <Button variant="ghost" size="icon" className="text-blue-100 hover:bg-blue-700">
+                  <Bell className="w-5 h-5" />
+                </Button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage
+                          src={formatAvatarUrl(user?.avatar) || "/placeholder.svg"}
+                          alt={getUserDisplayName(user)}
+                        />
+                        <AvatarFallback className="bg-blue-600 text-white">
+                          {getUserInitials(user)}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56 bg-blue-800 border-blue-700" align="end" forceMount>
+                    <div className="flex items-center justify-start gap-2 p-2">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage
+                          src={formatAvatarUrl(user?.avatar) || "/placeholder.svg"}
+                          alt={getUserDisplayName(user)}
+                        />
+                        <AvatarFallback className="bg-blue-600 text-white">
+                          {getUserInitials(user)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col space-y-1 leading-none">
+                        <p className="font-medium text-blue-100">{getUserDisplayName(user)}</p>
+                        <p className="w-[200px] truncate text-sm text-blue-300">{user?.email}</p>
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator className="bg-blue-700" />
+                    <DropdownMenuItem asChild className="text-blue-100 hover:bg-blue-700">
+                      <Link href="/profiles" className="flex items-center gap-2">
+                        <Users className="w-4 h-4" />
+                        {labels.selectProfile}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator className="bg-blue-700" />
+                    <DropdownMenuItem asChild className="text-blue-100 hover:bg-blue-700">
+                      <Link href="/profile" className="flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        {labels.profile}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="text-blue-100 hover:bg-blue-700">
+                      <Link href="/settings" className="flex items-center gap-2">
+                        <Settings className="w-4 h-4" />
+                        {labels.settings}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator className="bg-blue-700" />
+                    <DropdownMenuItem
+                      className="text-blue-100 hover:bg-blue-700 cursor-pointer"
+                      onClick={handleLogout}
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Log out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Link href="/login">
+                  <Button variant="ghost" className="text-blue-100 hover:bg-blue-700 rounded-full px-5">
+                    {labels.signIn}
+                  </Button>
+                </Link>
+                <Link href="/register">
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-5">
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    {labels.signUp}
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </header>
   )
-}
+  }

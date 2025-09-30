@@ -3,174 +3,157 @@
 import { useState, useEffect, useMemo } from "react"
 import { useSelector, useDispatch } from "react-redux"
 import type { RootState } from "@/store/store"
-import { setContent } from "@/store/slices/contentSlice"
+import { setContent, setTrending, setRecommended } from "@/store/slices/contentSlice"
 import Header from "@/components/layout/header"
-import ContentFilters from "@/components/sections/content-filters"
+import ContentRow from "@/components/sections/content-row"
 import VideoModal from "@/components/modals/video-modal"
-import { mockContent } from "@/lib/mock-data"
-import Footer from "../layout/footer"
+import Footer from "@/components/layout/footer"
+import { mockContent, mockTrending, mockRecommended } from "@/lib/mock-data"
 
 export default function MoviesPage() {
   const dispatch = useDispatch()
-  const { content } = useSelector((state: RootState) => state.content)
+  const { content, trending, recommended } = useSelector((state: RootState) => state.content)
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth)
+
   const [selectedVideo, setSelectedVideo] = useState<any>(null)
+
+  // Filters state
   const [filters, setFilters] = useState({
     genre: "all",
     year: "all",
     rating: "all",
-    sortBy: "popularity",
-    searchQuery: "",
     language: "all",
-    duration: "all",
-    director: "all",
-    cast: "all",
+    searchQuery: "",
   })
-  const [showMobileFilters, setShowMobileFilters] = useState(false)
 
   useEffect(() => {
     dispatch(setContent(mockContent))
+    dispatch(setTrending(mockTrending))
+    dispatch(setRecommended(mockRecommended))
   }, [dispatch])
 
+  const handleVideoSelect = (video: any) => {
+    if (video.isPremium && !isAuthenticated) return
+    setSelectedVideo(video)
+  }
+
   const filteredMovies = useMemo(() => {
-    const list = Array.isArray(mockContent) ? mockContent : []
-    let filtered = list.filter((item: any) => item?.type === "movie")
+    let list = content.filter((item) => item.type === "movie")
 
-    const q = filters.searchQuery.toLowerCase()
-    if (filters.searchQuery) filtered = filtered.filter(movie => (movie?.title || "").toLowerCase().includes(q))
-
-    if (filters.genre !== "all") filtered = filtered.filter(movie => Array.isArray(movie?.genres) ? movie.genres.includes(filters.genre) : movie.genre === filters.genre)
-    if (filters.year !== "all") filtered = filtered.filter(movie => {
-      const yearValue = Number(movie?.year)
-      if (filters.year.includes("-")) {
-        const [start, end] = filters.year.split("-").map(Number)
-        return yearValue >= start && yearValue <= end
-      }
-      return yearValue === Number(filters.year)
-    })
-    if (filters.rating !== "all") filtered = filtered.filter(movie => movie?.rating === filters.rating)
-    if (filters.language !== "all") filtered = filtered.filter(movie => movie?.language === filters.language)
-    if (filters.duration !== "all") filtered = filtered.filter(movie => {
-      const runtime = Number(movie?.duration)
-      if (filters.duration.startsWith("<")) return runtime < Number(filters.duration.slice(1))
-      if (filters.duration.startsWith(">")) return runtime > Number(filters.duration.slice(1))
-      if (filters.duration.includes("-")) {
-        const [min, max] = filters.duration.split("-").map(Number)
-        return runtime >= min && runtime <= max
-      }
-      return true
-    })
-    if (filters.director !== "all") filtered = filtered.filter(movie => movie?.director?.toLowerCase() === filters.director.toLowerCase())
-    if (filters.cast !== "all") filtered = filtered.filter(movie => Array.isArray(movie?.cast) && movie.cast.includes(filters.cast))
-
-    switch (filters.sortBy) {
-      case "title":
-        filtered.sort((a, b) => (a?.title || "").localeCompare(b?.title || ""))
-        break
-      case "year":
-        filtered.sort((a, b) => (b?.year || 0) - (a?.year || 0))
-        break
-      case "rating":
-        filtered.sort((a, b) => (b?.match || 0) - (a?.match || 0))
-        break
-      case "duration":
-        filtered.sort((a, b) => (b?.duration || 0) - (a?.duration || 0))
-        break
-      default:
-        filtered.sort((a, b) => (b?.match || 0) - (a?.match || 0))
+    if (filters.searchQuery) {
+      const q = filters.searchQuery.toLowerCase()
+      list = list.filter((m) => (m.title || "").toLowerCase().includes(q))
     }
 
-    return filtered
-  }, [filters])
+    if (filters.genre !== "all") list = list.filter((m) => Array.isArray(m.genres) ? m.genres.includes(filters.genre) : m.genre === filters.genre)
+    if (filters.year !== "all") list = list.filter((m) => String(m.year) === filters.year)
+    if (filters.rating !== "all") list = list.filter((m) => String(m.rating) === filters.rating)
+    if (filters.language !== "all") list = list.filter((m) => m.language === filters.language)
+
+    return list
+  }, [content, filters])
+
+  const filteredTrending = trending.filter((t) => t.type === "movie" && filteredMovies.includes(t))
+  const filteredRecommended = recommended.filter((r) => r.type === "movie" && filteredMovies.includes(r))
 
   return (
-    <div className="min-h-screen bg-blue-950 text-blue-100">
+    <div className="min-h-screen bg-gradient-to-b from-blue-950 via-blue-900 to-black text-blue-100 flex flex-col">
       <Header />
 
-      <div className="pt-20 px-4 md:px-8 lg:px-12 flex flex-col md:flex-row">
-        {/* Filters Sidebar (Desktop) */}
-        <div className="hidden md:block md:w-72 md:pr-6 sticky top-20 self-start">
-          <ContentFilters
-            filters={filters}
-            onFiltersChange={setFilters}
-            contentType="movies"
-            totalResults={filteredMovies.length}
+      <main className="flex-1 px-2 md:px-6 pt-24 pb-20 space-y-10">
+        {/* Page Title */}
+        <h1 className="text-3xl md:text-4xl font-bold text-blue-100 mb-6">🎬 Movies</h1>
+
+        {/* Sticky Filters Bar */}
+        <div className="sticky top-24 z-50 bg-blue-950/95 backdrop-blur-md p-4 rounded-md mb-6 flex flex-wrap gap-4 shadow-md">
+          <input
+            type="text"
+            placeholder="Search movies..."
+            value={filters.searchQuery}
+            onChange={(e) => setFilters({...filters, searchQuery: e.target.value})}
+            className="px-3 py-2 rounded bg-blue-800 text-blue-100 placeholder-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+          <select
+            value={filters.genre}
+            onChange={(e) => setFilters({...filters, genre: e.target.value})}
+            className="px-3 py-2 rounded bg-blue-800 text-blue-100"
+          >
+            <option value="all">All Genres</option>
+            <option value="Action">Action</option>
+            <option value="Comedy">Comedy</option>
+            <option value="Drama">Drama</option>
+            <option value="Horror">Horror</option>
+          </select>
+          <select
+            value={filters.year}
+            onChange={(e) => setFilters({...filters, year: e.target.value})}
+            className="px-3 py-2 rounded bg-blue-800 text-blue-100"
+          >
+            <option value="all">All Years</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+            <option value="2023">2023</option>
+          </select>
+          <select
+            value={filters.rating}
+            onChange={(e) => setFilters({...filters, rating: e.target.value})}
+            className="px-3 py-2 rounded bg-blue-800 text-blue-100"
+          >
+            <option value="all">All Ratings</option>
+            <option value="G">G</option>
+            <option value="PG">PG</option>
+            <option value="PG-13">PG-13</option>
+            <option value="R">R</option>
+          </select>
+          <select
+            value={filters.language}
+            onChange={(e) => setFilters({...filters, language: e.target.value})}
+            className="px-3 py-2 rounded bg-blue-800 text-blue-100"
+          >
+            <option value="all">All Languages</option>
+            <option value="English">English</option>
+            <option value="Shona">Shona</option>
+            <option value="French">French</option>
+            <option value="Zulu">Zulu</option>
+            <option value="Portuguese">Portuguese</option>
+            <option value="Swahili">Swahili</option>
+          </select>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1">
-          {/* Mobile Filters Button */}
-          <div className="md:hidden mb-4">
-            <button
-              onClick={() => setShowMobileFilters(true)}
-              className="bg-blue-700 text-blue-100 px-4 py-2 rounded"
-            >
-              Filters
-            </button>
-          </div>
+        {/* Trending Movies */}
+        {filteredTrending.length > 0 && (
+          <ContentRow
+            title="🔥 Trending Movies"
+            titleClass="text-2xl font-bold text-blue-100 mb-4"
+            content={filteredTrending}
+            onVideoSelect={handleVideoSelect}
+          />
+        )}
 
-          {/* Mobile Filters Modal */}
-          {showMobileFilters && (
-            <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex justify-center items-start pt-20">
-              <div className="bg-blue-900 p-4 rounded-lg w-11/12 max-w-md">
-                <button
-                  onClick={() => setShowMobileFilters(false)}
-                  className="mb-4 text-blue-300 underline"
-                >
-                  Close
-                </button>
-                <ContentFilters
-                  filters={filters}
-                  onFiltersChange={setFilters}
-                  contentType="movies"
-                  totalResults={filteredMovies.length}
-                />
-              </div>
-            </div>
-          )}
+        {/* Recommended Movies */}
+        {filteredRecommended.length > 0 && (
+          <ContentRow
+            title="⭐ Recommended For You"
+            titleClass="text-2xl font-bold text-blue-100 mb-4"
+            content={filteredRecommended}
+            onVideoSelect={handleVideoSelect}
+          />
+        )}
 
-          {/* Heading */}
-          <div className="mb-6">
-            <h1 className="text-3xl md:text-4xl font-bold text-blue-500 mb-2">Movies</h1>
-            <p className="text-blue-300">
-              Discover {filteredMovies.length} movies from our collection
-            </p>
-          </div>
-
-          {/* Movie Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {filteredMovies.map((movie: any) => (
-              <div
-                key={movie.id}
-                className="relative group cursor-pointer rounded overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300"
-                onClick={() => setSelectedVideo(movie)}
-              >
-                <img
-                  src={movie.poster}
-                  alt={movie.title}
-                  className="w-full h-60 object-cover"
-                />
-                <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 p-2 text-sm text-blue-100">
-                  <h2 className="font-semibold">{movie.title}</h2>
-                  <p className="text-xs">{movie.year} • {movie.rating}</p>
-                  <p className="text-xs truncate">{Array.isArray(movie.genres) ? movie.genres.join(", ") : movie.genre}</p>
-                </div>
-                <div className="absolute inset-0 bg-black bg-opacity-20 opacity-0 group-hover:opacity-100 flex justify-center items-center transition-opacity duration-300">
-                  <button className="bg-blue-500 text-white px-4 py-2 rounded">
-                    Play Trailer
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+        {/* All Movies */}
+        <ContentRow
+          title="🎬 All Movies"
+          titleClass="text-2xl font-bold text-blue-100 mb-4"
+          content={filteredMovies}
+          onVideoSelect={handleVideoSelect}
+        />
+      </main>
 
       {/* Video Modal */}
       {selectedVideo && (
         <VideoModal video={selectedVideo} onClose={() => setSelectedVideo(null)} />
       )}
-      {/* 👇 Footer at bottom */}
+
       <Footer />
     </div>
   )
