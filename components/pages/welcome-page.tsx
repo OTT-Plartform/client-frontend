@@ -6,6 +6,7 @@ import { Monitor, Laptop, Tablet, Smartphone, CreditCard, Wallet, Banknote, Chec
 import { api } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
+import Footer from "@/components/layout/footer"
 
 export default function WelcomePage() {
   const [plans, setPlans] = useState<any[]>([])

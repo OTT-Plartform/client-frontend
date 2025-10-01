@@ -5,8 +5,9 @@ import { useSelector, useDispatch } from "react-redux"
 import type { RootState } from "@/store/store"
 import { setContent, setTrending, setRecommended } from "@/store/slices/contentSlice"
 import Header from "@/components/layout/header"
-import ContentRow from "@/components/sections/content-row"
-import VideoModal from "@/components/modals/video-modal"
+import MoviesGrid from "@/components/sections/movies-grid"
+import MovieCard from "@/components/cards/movie-card"
+import MovieInfoModal from "@/components/modals/movie-info-modal"
 import Footer from "@/components/layout/footer"
 import { mockContent, mockTrending, mockRecommended } from "@/lib/mock-data"
 
@@ -16,6 +17,8 @@ export default function MoviesPage() {
   const { isAuthenticated } = useSelector((state: RootState) => state.auth)
 
   const [selectedVideo, setSelectedVideo] = useState<any>(null)
+  const [infoOpen, setInfoOpen] = useState(false)
+  const [infoItem, setInfoItem] = useState<any | null>(null)
 
   // Filters state
   const [filters, setFilters] = useState({
@@ -27,14 +30,41 @@ export default function MoviesPage() {
   })
 
   useEffect(() => {
-    dispatch(setContent(mockContent))
-    dispatch(setTrending(mockTrending))
-    dispatch(setRecommended(mockRecommended))
+    const normalize = (item: any) => ({
+      id: String(item.id),
+      title: item.title || "Untitled",
+      description: item.description || "",
+      thumbnail: item.thumbnail || "/placeholder.jpg",
+      backdrop: item.backdrop,
+      type: item.type === "series" ? "series" : "movie",
+      genre: item.genre || (Array.isArray(item.genres) ? item.genres[0] || "General" : "General"),
+      genres: item.genres,
+      year: Number(item.year) || new Date().getFullYear(),
+      rating: item.rating || "PG-13",
+      duration: item.duration || undefined,
+      match: Number(item.match) || 95,
+      episodes: Array.isArray(item.episodes) ? item.episodes.length : undefined,
+      seasons: item.seasons || undefined,
+      ageLimit: item.ageLimit || undefined,
+      cast: Array.isArray(item.cast) ? item.cast : undefined,
+      crew: Array.isArray(item.crew) ? item.crew : undefined,
+      youtubeId: item.youtubeId || undefined,
+      videoUrl: item.videoUrl || undefined,
+    })
+
+    dispatch(setContent(mockContent.map(normalize) as any))
+    dispatch(setTrending(mockTrending.map(normalize) as any))
+    dispatch(setRecommended(mockRecommended.map(normalize) as any))
   }, [dispatch])
 
   const handleVideoSelect = (video: any) => {
     if (video.isPremium && !isAuthenticated) return
     setSelectedVideo(video)
+  }
+
+  const handleMoreInfo = (item: any) => {
+    setInfoItem(item)
+    setInfoOpen(true)
   }
 
   const filteredMovies = useMemo(() => {
@@ -48,7 +78,7 @@ export default function MoviesPage() {
     if (filters.genre !== "all") list = list.filter((m) => Array.isArray(m.genres) ? m.genres.includes(filters.genre) : m.genre === filters.genre)
     if (filters.year !== "all") list = list.filter((m) => String(m.year) === filters.year)
     if (filters.rating !== "all") list = list.filter((m) => String(m.rating) === filters.rating)
-    if (filters.language !== "all") list = list.filter((m) => m.language === filters.language)
+    if (filters.language !== "all") list = list.filter((m) => (m as any).language === filters.language)
 
     return list
   }, [content, filters])
@@ -77,6 +107,7 @@ export default function MoviesPage() {
             value={filters.genre}
             onChange={(e) => setFilters({...filters, genre: e.target.value})}
             className="px-3 py-2 rounded bg-blue-800 text-blue-100"
+            aria-label="Filter by genre"
           >
             <option value="all">All Genres</option>
             <option value="Action">Action</option>
@@ -88,6 +119,7 @@ export default function MoviesPage() {
             value={filters.year}
             onChange={(e) => setFilters({...filters, year: e.target.value})}
             className="px-3 py-2 rounded bg-blue-800 text-blue-100"
+            aria-label="Filter by year"
           >
             <option value="all">All Years</option>
             <option value="2025">2025</option>
@@ -98,6 +130,7 @@ export default function MoviesPage() {
             value={filters.rating}
             onChange={(e) => setFilters({...filters, rating: e.target.value})}
             className="px-3 py-2 rounded bg-blue-800 text-blue-100"
+            aria-label="Filter by rating"
           >
             <option value="all">All Ratings</option>
             <option value="G">G</option>
@@ -109,6 +142,7 @@ export default function MoviesPage() {
             value={filters.language}
             onChange={(e) => setFilters({...filters, language: e.target.value})}
             className="px-3 py-2 rounded bg-blue-800 text-blue-100"
+            aria-label="Filter by language"
           >
             <option value="all">All Languages</option>
             <option value="English">English</option>
@@ -120,38 +154,41 @@ export default function MoviesPage() {
           </select>
         </div>
 
-        {/* Trending Movies */}
-        {filteredTrending.length > 0 && (
-          <ContentRow
-            title="🔥 Trending Movies"
-            titleClass="text-2xl font-bold text-blue-100 mb-4"
-            content={filteredTrending}
-            onVideoSelect={handleVideoSelect}
+        {/* All Movies Grid */}
+        <div>
+          <h2 className="text-2xl font-bold text-blue-100 mb-4">🎬 All Movies</h2>
+          <MoviesGrid
+            items={filteredMovies}
+            pageSize={30}
+            renderItem={(item) => (
+              <MovieCard
+                item={item}
+                onPlay={handleVideoSelect}
+                onAddToList={() => {}}
+                onMoreInfo={handleMoreInfo}
+              />
+            )}
           />
-        )}
-
-        {/* Recommended Movies */}
-        {filteredRecommended.length > 0 && (
-          <ContentRow
-            title="⭐ Recommended For You"
-            titleClass="text-2xl font-bold text-blue-100 mb-4"
-            content={filteredRecommended}
-            onVideoSelect={handleVideoSelect}
-          />
-        )}
-
-        {/* All Movies */}
-        <ContentRow
-          title="🎬 All Movies"
-          titleClass="text-2xl font-bold text-blue-100 mb-4"
-          content={filteredMovies}
-          onVideoSelect={handleVideoSelect}
-        />
+        </div>
       </main>
 
-      {/* Video Modal */}
-      {selectedVideo && (
-        <VideoModal video={selectedVideo} onClose={() => setSelectedVideo(null)} />
+      {/* Video Modal (existing full-screen player) */}
+      {/* Keeping available but not auto-opened from info modal; open on Play */}
+      {/* Add your existing VideoModal here if desired */}
+
+      {/* Info Modal - Netflix style */}
+      {infoItem && (
+        <MovieInfoModal
+          item={infoItem}
+          open={infoOpen}
+          onClose={() => setInfoOpen(false)}
+          onPlay={handleVideoSelect}
+          onAddToList={() => {}}
+          related={filteredMovies.filter((m) => m.id !== infoItem.id).slice(0, 12)}
+          renderRelatedCard={(rel) => (
+            <MovieCard item={rel} onPlay={handleVideoSelect} onMoreInfo={handleMoreInfo} showHoverDescription={false} />
+          )}
+        />
       )}
 
       <Footer />

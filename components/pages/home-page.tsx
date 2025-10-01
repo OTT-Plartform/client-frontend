@@ -7,6 +7,10 @@ import { setContent, setTrending, setRecommended } from "@/store/slices/contentS
 import Header from "@/components/layout/header"
 import HeroSection from "@/components/sections/hero-section"
 import ContentRow from "@/components/sections/content-row"
+import MovieCard from "@/components/cards/movie-card"
+import SeriesCard from "@/components/cards/series-card"
+import SeriesInfoModal from "@/components/modals/series-info-modal"
+import MovieInfoModal from "@/components/modals/movie-info-modal"
 import VideoModal from "@/components/modals/video-modal"
 import EpisodesSection from "@/components/sections/episodes-section"
 import AuthModal from "@/components/modals/auth-modal"
@@ -21,12 +25,38 @@ export default function HomePage() {
   const [selectedVideo, setSelectedVideo] = useState<any>(null)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [selectedSeries, setSelectedSeries] = useState<any>(null) // for episodes modal
+  const [seriesInfoOpen, setSeriesInfoOpen] = useState(false)
+  const [infoItem, setInfoItem] = useState<any | null>(null)
+  const [infoOpen, setInfoOpen] = useState(false)
 
   useEffect(() => {
     // Simulate API calls
-    dispatch(setContent(mockContent))
-    dispatch(setTrending(mockTrending))
-    dispatch(setRecommended(mockRecommended))
+    const normalize = (item: any) => ({
+      id: String(item.id),
+      title: item.title || "Untitled",
+      description: item.description || "",
+      thumbnail: item.thumbnail || "/placeholder.jpg",
+      backdrop: item.backdrop,
+      type: item.type === "series" ? "series" : "movie",
+      genre: item.genre || (Array.isArray(item.genres) ? item.genres[0] || "General" : "General"),
+      genres: item.genres,
+      year: Number(item.year) || new Date().getFullYear(),
+      rating: item.rating || "PG-13",
+      duration: item.duration || undefined,
+      match: Number(item.match) || 95,
+      // preserve full episodes array for series modals
+      episodes: Array.isArray(item.episodes) ? item.episodes : undefined,
+      seasons: item.seasons || undefined,
+      ageLimit: item.ageLimit || undefined,
+      cast: Array.isArray(item.cast) ? item.cast : undefined,
+      crew: Array.isArray(item.crew) ? item.crew : undefined,
+      youtubeId: item.youtubeId || undefined,
+      videoUrl: item.videoUrl || undefined,
+    })
+
+    dispatch(setContent((mockContent as any[]).map(normalize) as any))
+    dispatch(setTrending((mockTrending as any[]).map(normalize) as any))
+    dispatch(setRecommended((mockRecommended as any[]).map(normalize) as any))
   }, [dispatch])
 
   const handleVideoSelect = (video: any) => {
@@ -43,6 +73,12 @@ export default function HomePage() {
 
   const handleShowEpisodes = (series: any) => {
     setSelectedSeries(series)
+    setSeriesInfoOpen(true)
+  }
+
+  const handleMoreInfo = (item: any) => {
+    setInfoItem(item)
+    setInfoOpen(true)
   }
 
   return (
@@ -62,6 +98,13 @@ export default function HomePage() {
             content={trending}
             onVideoSelect={handleVideoSelect}
             onShowEpisodes={handleShowEpisodes}
+            renderItem={(item, onPlay, onEpisodes) => (
+              item.type === 'series' ? (
+                <SeriesCard item={item} onPlay={onPlay} onShowEpisodes={onEpisodes} hoverContext="row" />
+              ) : (
+                <MovieCard item={item} onPlay={onPlay} onMoreInfo={handleMoreInfo} hoverContext="row" />
+              )
+            )}
           />
           <ContentRow
             title="⭐ Recommended For You"
@@ -69,20 +112,37 @@ export default function HomePage() {
             content={recommended}
             onVideoSelect={handleVideoSelect}
             onShowEpisodes={handleShowEpisodes}
+            renderItem={(item, onPlay, onEpisodes) => (
+              item.type === 'series' ? (
+                <SeriesCard item={item} onPlay={onPlay} onShowEpisodes={onEpisodes} hoverContext="row" />
+              ) : (
+                <MovieCard item={item} onPlay={onPlay} onMoreInfo={handleMoreInfo} hoverContext="row" />
+              )
+            )}
           />
           {/* 🆕 New on UbiqEnt */}
           <ContentRow
             title="🆕 New on UbiqEnt"
             titleClass="text-2xl font-bold text-blue-100 mb-4"
-            content={content.filter((item) => item.isNew)}
+            content={content.filter((item) => item.year >= new Date().getFullYear() - 1)}
             onVideoSelect={handleVideoSelect}
             onShowEpisodes={handleShowEpisodes}
+            renderItem={(item, onPlay, onEpisodes) => (
+              item.type === 'series' ? (
+                <SeriesCard item={item} onPlay={onPlay} onShowEpisodes={onEpisodes} hoverContext="row" />
+              ) : (
+                <MovieCard item={item} onPlay={onPlay} onMoreInfo={handleMoreInfo} hoverContext="row" />
+              )
+            )}
           />
           <ContentRow
             title="🎬 Movies"
             titleClass="text-2xl font-bold text-blue-100 mb-4"
             content={content.filter((item) => item.type === "movie")}
             onVideoSelect={handleVideoSelect}
+            renderItem={(item, onPlay) => (
+              <MovieCard item={item} onPlay={onPlay} onMoreInfo={handleMoreInfo} hoverContext="row" />
+            )}
           />
           <ContentRow
             title="📺 Series"
@@ -90,6 +150,9 @@ export default function HomePage() {
             content={content.filter((item) => item.type === "series")}
             onVideoSelect={handleVideoSelect}
             onShowEpisodes={handleShowEpisodes}
+            renderItem={(item, onPlay, onEpisodes) => (
+              <SeriesCard item={item} onPlay={onPlay} onShowEpisodes={onEpisodes} hoverContext="row" />
+            )}
           />
         </div>
       </main>
@@ -112,13 +175,26 @@ export default function HomePage() {
 
       {/* Episodes Modal */}
       {selectedSeries && (
-        <div className="px-2 md:px-6">
-          <EpisodesSection
-            series={selectedSeries}
-            onClose={() => setSelectedSeries(null)}
-            onPlayEpisode={handleVideoSelect}
-          />
-        </div>
+        <SeriesInfoModal
+          item={selectedSeries}
+          open={seriesInfoOpen}
+          onClose={() => { setSeriesInfoOpen(false); setSelectedSeries(null) }}
+          onPlayEpisode={handleVideoSelect}
+        />
+      )}
+
+      {infoItem && (
+        <MovieInfoModal
+          item={infoItem}
+          open={infoOpen}
+          onClose={() => setInfoOpen(false)}
+          onPlay={handleVideoSelect}
+          onAddToList={() => {}}
+          related={content.filter((m) => m.type === 'movie' && m.id !== infoItem.id).slice(0, 12)}
+          renderRelatedCard={(rel) => (
+            <MovieCard item={rel} onPlay={handleVideoSelect} onMoreInfo={handleMoreInfo} showHoverDescription={false} hoverContext="row" />
+          )}
+        />
       )}
 
       {/* 👇 Footer at bottom */}
