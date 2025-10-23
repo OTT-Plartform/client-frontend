@@ -111,9 +111,29 @@ export default function MoviesPage() {
           >
             <option value="all">All Genres</option>
             <option value="Action">Action</option>
+            <option value="Adventure">Adventure</option>
             <option value="Comedy">Comedy</option>
             <option value="Drama">Drama</option>
             <option value="Horror">Horror</option>
+            <option value="Romance">Romance</option>
+            <option value="Sci-Fi">Sci-Fi</option>
+            <option value="Thriller">Thriller</option>
+            <option value="Documentary">Documentary</option>
+            <option value="Music">Music</option>
+            <option value="Lifestyle">Lifestyle</option>
+            <option value="News">News</option>
+            <option value="Sports">Sports</option>
+            <option value="Kids">Kids</option>
+            <option value="Reality">Reality</option>
+            <option value="Platform Originals">Platform Originals</option>
+            <option value="Comedy: Skits">Comedy: Skits</option>
+            <option value="Agriculture">Agriculture</option>
+            <option value="Diaspora">Diaspora</option>
+            <option value="Afrimation">Afrimation</option>
+            <option value="Documentaries">Documentaries</option>
+            <option value="Real Estate">Real Estate</option>
+            <option value="Exclusive">Exclusive</option>
+            <option value="Classics">Classics</option>
           </select>
           <select
             value={filters.year}
