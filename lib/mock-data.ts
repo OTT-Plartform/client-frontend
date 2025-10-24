@@ -335,3 +335,122 @@ export const mockRecommended = [
     language: "English",
   },
 ];
+
+export const mockSeries = [
+  {
+    id: "1",
+    title: "African Skies",
+    thumbnail: "/thumnails/african_skies.jpeg",
+    isPremium: false,
+    description: "A breathtaking journey through Africa's diverse landscapes and cultures, exploring the beauty and challenges of life on the continent.",
+    genre: "Documentary",
+    genres: ["Documentary", "Travel", "Nature"],
+    year: 2024,
+    rating: "PG",
+    duration: "1 season",
+    episodes: [
+      {
+        title: "Episode 1: The Serengeti's Secrets",
+        description: "Uncover the hidden wonders of the Serengeti, from the Great Migration to the Big Five.",
+      },
+      {
+        title: "Episode 2: Victoria Falls - The Smoke That Thunders",
+        description: "Explore the majesty of Victoria Falls and the Zambezi River.",
+      },
+      {
+        title: "Episode 3: The Sahara's Enduring Spirit",
+        description: "Experience the vastness of the Sahara Desert and its resilient inhabitants.",
+      },
+    ],
+    crew: ["Director David Attenborough", "Producer National Geographic"],
+    ageLimit: "All Ages",
+    language: "English",
+  },
+  {
+    id: "2",
+    title: "Nollywood Dreams",
+    thumbnail: "/thumnails/nollywood_dreams.jpeg",
+    isPremium: true,
+    description: "Step into the vibrant world of Nollywood, the Nigerian film industry, and follow the lives of those who dare to dream.",
+    genre: "Drama",
+    genres: ["Drama", "Romance", "Platform Originals"],
+    year: 2023,
+    rating: "PG-13",
+    duration: "1 season",
+    episodes: [
+      {
+        title: "Episode 1: The Audition",
+        description: "Aspiring actress faces challenges and triumphs during a high-stakes audition.",
+      },
+      {
+        title: "Episode 2: Behind the Scenes",
+        description: "A glimpse into the making of a Nollywood blockbuster.",
+      },
+      {
+        title: "Episode 3: The Premiere",
+        description: "The cast and crew prepare for the glamorous premiere of their film.",
+      },
+    ],
+    crew: ["Director Kunle Afolayan", "Producer Mo Abudu"],
+    ageLimit: "13+",
+    language: "English",
+  },
+  {
+    id: "3",
+    title: "Shaka Zulu: The Series",
+    thumbnail: "/thumnails/shaka_zulu.jpeg",
+    isPremium: true,
+    description: "A historical drama depicting the life and times of Shaka Zulu, the legendary king of the Zulu nation.",
+    genre: "History",
+    genres: ["History", "Drama", "War"],
+    year: 2023,
+    rating: "R",
+    duration: "1 season",
+    episodes: [
+      {
+        title: "Episode 1: The Rise of Shaka",
+        description: "Shaka's early life and the unification of the Zulu tribes.",
+      },
+      {
+        title: "Episode 2: The Warrior King",
+        description: "Shaka's military strategies and battles that expanded the Zulu kingdom.",
+      },
+      {
+        title: "Episode 3: The Legacy",
+        description: "The enduring legacy of Shaka Zulu in modern South Africa.",
+      },
+    ],
+    crew: ["Director John Trengove", "Producer Anant Singh"],
+    ageLimit: "16+",
+    language: "Zulu",
+  },
+  {
+    id: "4",
+    title: "Mama Africa: The Musical",
+    thumbnail: "/thumnails/mama_africa.jpeg",
+    isPremium: true,
+    description: "A celebration of the life and music of Miriam Makeba, featuring her timeless songs and the story of her journey as an artist and activist.",
+    genre: "Musical",
+    genres: ["Musical", "Biography", "Drama"],
+    year: 2023,
+    rating: "PG",
+    duration: "1 season",
+    episodes: [
+      {
+        title: "Episode 1: The Voice of Africa",
+        description: "Miriam's early years and the development of her unique musical style.",
+      },
+      {
+        title: "Episode 2: Exile and Activism",
+        description: "Miriam's life in exile and her activism against apartheid.",
+      },
+      {
+        title: "Episode 3: Return to South Africa",
+        description: "Miriam's triumphant return to a free South Africa and her enduring legacy.",
+      },
+    ],
+    crew: ["Director Darrell Roodt", "Producer Anant Singh"],
+    ageLimit: "All Ages",
+    language: "English",
+  },
+];

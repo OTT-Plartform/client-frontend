@@ -24,7 +24,6 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react"
-import { mockSeries } from "@/lib/mock-data"
 
 interface SeriesDetailPageProps {
   seriesId: string
