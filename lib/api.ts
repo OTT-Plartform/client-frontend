@@ -4,7 +4,7 @@ import { clearStoredTokens, getStoredTokens, setStoredTokens } from "./auth"
 const DEFAULT_BASE_URL = "https://ubiqent.com/backend/api"
 
 function getBaseUrl() {
-  return process.env.NEXT_PUBLIC_API_URL || DEFAULT_BASE_URL
+  return DEFAULT_BASE_URL
 }
 
 let isRefreshing = false

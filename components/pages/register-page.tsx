@@ -107,7 +107,7 @@ export default function RegisterPage() {
         const googleAuthUrl = await api.googleAuth()
         window.location.href = googleAuthUrl
       } else if (provider === 'facebook') {
-        const base = process.env.NEXT_PUBLIC_API_URL || "http://ubiqent.com:8080/api"
+        const base = "https://ubiqent.com/backend/api"
         window.location.href = `${base}/auth/facebook`
       }
     } catch (error: any) {

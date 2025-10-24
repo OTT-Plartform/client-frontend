@@ -188,7 +188,7 @@ export default function LoginPage() {
     try {
       dispatch(setOAuthLoading({ loading: true, provider: 'facebook' }))
       
-      const base = process.env.NEXT_PUBLIC_API_URL || "http://ubiqent.com:8080/api"
+      const base = "https://ubiqent.com/backend/api"
       window.location.href = `${base}/auth/facebook`
     } catch (error: any) {
       dispatch(setOAuthLoading({ loading: false, provider: undefined }))
