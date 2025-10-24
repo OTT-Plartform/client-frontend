@@ -6,6 +6,7 @@ import { Monitor, Laptop, Tablet, Smartphone, CreditCard, Wallet, Banknote, Chec
 import { api } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
+import Footer from "@/components/layout/footer"
 
 export default function WelcomePage() {
   const [plans, setPlans] = useState<any[]>([])
@@ -341,10 +342,8 @@ export default function WelcomePage() {
         </Link>
       </section>
 
-      {/* Footer */}
-      <footer className="text-center py-8 text-sm text-blue-300 border-t border-blue-800">
-        © {new Date().getFullYear()} UbiqEnt · All rights reserved
-      </footer>
+      {/* 👇 Footer at bottom */}
+      <Footer />
     </div>
   )
 }
