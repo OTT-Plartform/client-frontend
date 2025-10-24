@@ -1,7 +1,7 @@
 // lib/api.ts
 import { clearStoredTokens, getStoredTokens, setStoredTokens } from "./auth"
 
-const DEFAULT_BASE_URL = "http://ubiqent.com:8080/api"
+const DEFAULT_BASE_URL = "https://ubiqent.com/backend/api"
 
 function getBaseUrl() {
   return process.env.NEXT_PUBLIC_API_URL || DEFAULT_BASE_URL
