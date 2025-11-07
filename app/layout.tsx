@@ -9,9 +9,9 @@ import AuthBootstrap from "@/components/auth-bootstrap"
 const nunito = Nunito({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "OTT Streaming - Premium Streaming Platform",
-  description: "Your premium OTT streaming experience with unlimited movies and TV shows",
-    generator: 'v0.dev'
+  title: "Ubiqent Streaming - Premium Streaming Platform",
+  description: "Your premium streaming experience with unlimited movies and TV shows",
+  generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={nunito.className}>
-        <ReduxProvider>          
+        <ReduxProvider>
           <AuthBootstrap>
             {children}
           </AuthBootstrap>

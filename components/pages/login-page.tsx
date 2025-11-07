@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { FaApple, FaGoogle, FaFacebookF, FaTwitter, FaGithub } from "react-icons/fa"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useDispatch, useSelector } from "react-redux"
 import { useForm } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
@@ -17,9 +16,10 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { setUser, setOAuthLoading } from "@/store/slices/authSlice"
+import { useAppDispatch, useAppSelector } from "@/store/hooks"
+import { loginUser, initiateOAuth, clearError, clearFieldError } from "@/store/slices/authSlice"
 import { showSnackbar } from "@/store/slices/uiSlice"
-import { api } from "@/lib/api"
+import { getDeviceInfo } from "@/lib/deviceUtils"
 import LoginSuccess from "@/components/animations/login-success"
 import {
   Eye,
@@ -46,11 +46,9 @@ type LoginFormData = yup.InferType<typeof loginSchema>
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const dispatch = useDispatch()
-  const { isOAuthLoading, oauthProvider } = useSelector((state: any) => state.auth)
+  const dispatch = useAppDispatch()
+  const { isLoading, isOAuthLoading, oauthProvider, error, validationErrors, user } = useAppSelector((state) => state.auth)
   const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({})
   const [showLoginSuccess, setShowLoginSuccess] = useState(false)
   const [userName, setUserName] = useState<string>('')
 
@@ -77,147 +75,113 @@ export default function LoginPage() {
     }
   }, [searchParams, dispatch])
 
-  const computeDeviceInfo = () => {
-    try {
-      const userAgent = navigator.userAgent || ""
-      const isMobile = /Mobi|Android/i.test(userAgent)
-      const isTablet = /iPad|Tablet/i.test(userAgent)
-      let device_type = isMobile ? "mobile" : isTablet ? "tablet" : "desktop"
-      const device_name = navigator.platform || "web"
-      const device_model = navigator.vendor || "browser"
-      const os_name = (navigator as any).userAgentData?.platform || navigator.platform || "unknown"
-      const os_version = ""
-      const app_version = process.env.NEXT_PUBLIC_APP_VERSION || "web"
-      const screen_resolution = typeof window !== 'undefined' ? `${window.screen.width}x${window.screen.height}` : undefined
-      const key = "device_identifier"
-      let device_identifier = localStorage.getItem(key) || ""
-      if (!device_identifier) {
-        device_identifier = crypto?.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`
-        localStorage.setItem(key, device_identifier)
-      }
-      return {
-        device_name,
-        device_type,
-        device_identifier,
-        device_model,
-        os_name,
-        os_version,
-        app_version,
-        device_metadata: {
-          user_agent: userAgent,
-          screen_resolution,
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        },
-      }
-    } catch {
-      return {}
+  // Show error snackbar when error changes
+  useEffect(() => {
+    if (error) {
+      dispatch(showSnackbar({ message: error, type: "error" }))
     }
-  }
+  }, [error, dispatch])
+
+  // Handle successful login
+  useEffect(() => {
+    if (user && !showLoginSuccess) {
+      const displayName = user.full_name || user.email || 'User'
+      setUserName(displayName)
+      setShowLoginSuccess(true)
+    }
+  }, [user, showLoginSuccess])
 
   const onSubmit = async (data: LoginFormData) => {
-    setIsLoading(true)
-    setFieldErrors({}) // Clear previous field errors
+    dispatch(clearError())
     
     try {
-      const { api } = await import("@/lib/api")
-      const deviceInfo = computeDeviceInfo()
-      const res = await api.login({ email: data.email, password: data.password, ...deviceInfo })
-      if (res.success && res.data?.user) {
-        dispatch(setUser(res.data.user))
-        localStorage.setItem("userData", JSON.stringify(res.data.user))
-        
-        // Set user name and show success animation
-        const user = res.data.user as any
-        setUserName(user.full_name || user.email || 'User')
-        setShowLoginSuccess(true)
-      } else {
-        throw new Error("Login failed")
-      }
-    } catch (e: any) {
-      let message = "Login failed"
-      const raw = e?.message ?? ""
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw)
-          if (parsed.errors) {
-            // Backend validation errors
-            setFieldErrors(parsed.errors)
-            dispatch(showSnackbar({ 
-              message: parsed.message || "Please fix the validation errors", 
-              type: "error" 
-            }))
-          } else {
-            // General backend error
-            const serverMsg = Array.isArray(parsed?.message)
-              ? parsed.message.join(", ")
-              : parsed?.message || parsed?.error
-            if (serverMsg) message = serverMsg
-            dispatch(showSnackbar({ message, type: "error" }))
-          }
-        } catch {
-          message = raw
-          dispatch(showSnackbar({ message, type: "error" }))
-        }
-      } else {
-        dispatch(showSnackbar({ message, type: "error" }))
-      }
-    } finally {
-      setIsLoading(false)
+      const deviceInfo = getDeviceInfo()
+      
+      await dispatch(loginUser({ 
+        email: data.email, 
+        password: data.password,
+        ...deviceInfo
+      })).unwrap()
+      
+      // Success handling is done in useEffect above
+    } catch (err) {
+      // Error is already in Redux state and displayed via useEffect
     }
   }
 
   // OAuth handlers
   const handleGoogleLogin = async () => {
     try {
-      dispatch(setOAuthLoading({ loading: true, provider: 'google' }))
+      const result = await dispatch(initiateOAuth('google')).unwrap()
       
-      const googleAuthUrl = await api.googleAuth()
-      
-      // Redirect to Google OAuth
-      window.location.href = googleAuthUrl
+      if (result.redirectUrl) {
+        window.location.href = result.redirectUrl
+      }
     } catch (error: any) {
-      dispatch(setOAuthLoading({ loading: false, provider: undefined }))
-      dispatch(showSnackbar({ 
-        message: error.message || "Failed to initialize Google login", 
-        type: "error" 
-      }))
+      // Error is already in Redux state
     }
   }
 
   const handleFacebookLogin = async () => {
     try {
-      dispatch(setOAuthLoading({ loading: true, provider: 'facebook' }))
+      const result = await dispatch(initiateOAuth('facebook')).unwrap()
       
-      const base = "https://ubiqent.com/backend/api"
-      window.location.href = `${base}/auth/facebook`
+      if (result.redirectUrl) {
+        window.location.href = result.redirectUrl
+      }
     } catch (error: any) {
-      dispatch(setOAuthLoading({ loading: false, provider: undefined }))
-      dispatch(showSnackbar({ 
-        message: "Failed to initialize Facebook login", 
-        type: "error" 
-      }))
+      // Error is already in Redux state
+    }
+  }
+
+  const handleAppleLogin = () => {
+    dispatch(showSnackbar({ 
+      message: "Apple login coming soon", 
+      type: "info" 
+    }))
+  }
+
+  const handleTwitterLogin = () => {
+    dispatch(showSnackbar({ 
+      message: "Twitter login coming soon", 
+      type: "info" 
+    }))
+  }
+
+  const handleGithubLogin = () => {
+    dispatch(showSnackbar({ 
+      message: "GitHub login coming soon", 
+      type: "info" 
+    }))
+  }
+
+  // Clear field error when user starts typing
+  const handleInputChange = (field: string) => {
+    if (validationErrors[field]) {
+      dispatch(clearFieldError(field))
     }
   }
 
   const handleLoginSuccessComplete = () => {
-    // Get the user data to determine redirect
-    const userData = localStorage.getItem('userData')
-    if (userData) {
-      const user = JSON.parse(userData)
-      if (!user.onboarding_completed) {
-        router.push("/onboarding")
-      } else if (user.is_subscribed === false) {
-        router.push("/onboarding?step=2")
-      } else {
-        const activeProfileId = localStorage.getItem("activeProfileId")
-        if (!activeProfileId) {
-          router.push("/profiles")
-        } else {
-          router.push("/")
-        }
-      }
-    } else {
+    if (!user) {
       router.push("/")
+      return
+    }
+
+    // Determine redirect based on user state
+    const onboardingCompleted = (user as any).onboarding_completed
+    const isSubscribed = (user as any).is_subscribed
+    const activeProfileId = localStorage.getItem("activeProfileId")
+
+    if (!onboardingCompleted) {
+      router.push("/onboarding")
+    } else if (isSubscribed === false) {
+      router.push("/onboarding?step=2")
+    } else if (!activeProfileId) {
+      router.push("/profiles")
+    } else {
+      const redirectPath = searchParams.get('redirect')
+      router.push(redirectPath || "/")
     }
   }
 
@@ -231,7 +195,7 @@ export default function LoginPage() {
       {/* Background */}
       <div className="absolute inset-0">
         <img
-          src="https://images.unsplash.com/photo-1489599162163-3fb4b4b5b0b3?auto=format&fit=crop&w=1920&q=80"
+          src="/loginback.png"
           alt="African Cinema"
           className="w-full h-full object-cover"
         />
@@ -267,16 +231,10 @@ export default function LoginPage() {
               </CardHeader>
 
               <CardContent className="px-8 pb-8">
-                <form
-                  onSubmit={handleSubmit(onSubmit)}
-                  className="space-y-6"
-                >
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                   {/* Email */}
                   <div className="space-y-3">
-                    <Label
-                      htmlFor="email"
-                      className="text-white font-medium text-lg"
-                    >
+                    <Label htmlFor="email" className="text-white font-medium text-lg">
                       Email Address
                     </Label>
                     <div className="relative">
@@ -286,31 +244,27 @@ export default function LoginPage() {
                         type="email"
                         placeholder="Enter your email address"
                         className={`pl-14 h-14 bg-white/10 text-white placeholder-gray-400 rounded-2xl text-lg transition-all duration-300 ${
-                          (errors.email || fieldErrors.email) 
+                          (errors.email || validationErrors.email) 
                             ? "border-red-500 focus:border-red-500" 
                             : "border-white/20 focus:border-blue-500"
                         }`}
                         {...register("email")}
                         onChange={(e) => {
-                          if (fieldErrors.email) {
-                            setFieldErrors(prev => ({ ...prev, email: "" }))
-                          }
+                          register("email").onChange(e)
+                          handleInputChange("email")
                         }}
                       />
                     </div>
-                    {(errors.email || fieldErrors.email) && (
+                    {(errors.email || validationErrors.email) && (
                       <p className="text-red-400 text-sm">
-                        {errors.email?.message || fieldErrors.email}
+                        {validationErrors.email || errors.email?.message}
                       </p>
                     )}
                   </div>
 
                   {/* Password */}
                   <div className="space-y-3">
-                    <Label
-                      htmlFor="password"
-                      className="text-white font-medium text-lg"
-                    >
+                    <Label htmlFor="password" className="text-white font-medium text-lg">
                       Password
                     </Label>
                     <div className="relative">
@@ -320,15 +274,14 @@ export default function LoginPage() {
                         type={showPassword ? "text" : "password"}
                         placeholder="Enter your password"
                         className={`pl-14 pr-14 h-14 bg-white/10 text-white placeholder-gray-400 rounded-2xl text-lg transition-all duration-300 ${
-                          (errors.password || fieldErrors.password) 
+                          (errors.password || validationErrors.password) 
                             ? "border-red-500 focus:border-red-500" 
                             : "border-white/20 focus:border-blue-500"
                         }`}
                         {...register("password")}
                         onChange={(e) => {
-                          if (fieldErrors.password) {
-                            setFieldErrors(prev => ({ ...prev, password: "" }))
-                          }
+                          register("password").onChange(e)
+                          handleInputChange("password")
                         }}
                       />
                       <Button
@@ -345,9 +298,9 @@ export default function LoginPage() {
                         )}
                       </Button>
                     </div>
-                    {(errors.password || fieldErrors.password) && (
+                    {(errors.password || validationErrors.password) && (
                       <p className="text-red-400 text-sm">
-                        {errors.password?.message || fieldErrors.password}
+                        {validationErrors.password || errors.password?.message}
                       </p>
                     )}
                   </div>
@@ -356,7 +309,7 @@ export default function LoginPage() {
                   <Button
                     type="submit"
                     className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg rounded-full shadow-lg"
-                    disabled={isLoading || Object.keys(fieldErrors).length > 0}
+                    disabled={isLoading}
                   >
                     {isLoading ? (
                       <>
@@ -379,7 +332,7 @@ export default function LoginPage() {
                   <div className="flex-1 h-px bg-white/20" />
                 </div>
 
-                {/* Social Logins - circular icons */}
+                {/* Social Logins */}
                 <div className="flex items-center justify-center gap-3">
                   <Button
                     variant="outline"
@@ -411,6 +364,8 @@ export default function LoginPage() {
                     variant="outline"
                     size="icon"
                     className="h-11 w-11 rounded-full bg-black text-white hover:bg-gray-900"
+                    onClick={handleAppleLogin}
+                    disabled={isOAuthLoading}
                   >
                     <FaApple className="h-5 w-5" />
                   </Button>
@@ -418,6 +373,8 @@ export default function LoginPage() {
                     variant="outline"
                     size="icon"
                     className="h-11 w-11 rounded-full bg-[#1DA1F2] text-white hover:opacity-90 border-0"
+                    onClick={handleTwitterLogin}
+                    disabled={isOAuthLoading}
                   >
                     <FaTwitter className="h-5 w-5" />
                   </Button>
@@ -425,6 +382,8 @@ export default function LoginPage() {
                     variant="outline"
                     size="icon"
                     className="h-11 w-11 rounded-full bg-gray-800 text-white hover:bg-gray-700"
+                    onClick={handleGithubLogin}
+                    disabled={isOAuthLoading}
                   >
                     <FaGithub className="h-5 w-5" />
                   </Button>

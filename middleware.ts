@@ -1,52 +1,66 @@
-import { NextResponse, type NextRequest } from "next/server"
+import { NextResponse } from "next/server"
+import type { NextRequest } from "next/server"
 
-// Paths that do not require an active profile
-const PUBLIC_PATHS = [
-  "/login",
-  "/register",
+/**
+ * Protected routes that require authentication
+ */
+const PROTECTED_ROUTES = [
+  "/dashboard",
+  "/profile",
+  "/settings",
   "/onboarding",
-  "/auth",
-  "/api",
-  "/_next",
-  "/favicon.ico",
-  "/profiles", // allow hitting profiles page itself
+  "/watch",
+  "/favorites",
+  "/history",
 ]
 
-function isPublicPath(pathname: string) {
-  return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + "/"))
-}
+/**
+ * Public routes that redirect to home if authenticated
+ */
+const AUTH_ROUTES = ["/login", "/register", "/signup"]
 
-export async function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
 
-  if (isPublicPath(pathname)) {
-    return NextResponse.next()
+  // Check if route is protected
+  const isProtectedRoute = PROTECTED_ROUTES.some((route) => pathname.startsWith(route))
+  const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route))
+
+  // Get token from cookies
+  const tokenFromCookie = request.cookies.get("accessToken")?.value
+
+  // If it's a protected route and no token, redirect to login
+  if (isProtectedRoute && !tokenFromCookie) {
+    const loginUrl = new URL("/login", request.url)
+    loginUrl.searchParams.set("redirect", pathname)
+    return NextResponse.redirect(loginUrl)
   }
 
-  // Read tokens and active profile from cookies
-  const accessToken = req.cookies.get("accessToken")?.value || ""
-  const activeProfileId = req.cookies.get("activeProfileId")?.value || ""
-
-  // If not logged in, let existing auth guards handle redirect (pages already check)
-  if (!accessToken) {
-    return NextResponse.next()
+  // If it's an auth route and user is authenticated, redirect to home
+  if (isAuthRoute && tokenFromCookie) {
+    return NextResponse.redirect(new URL("/", request.url))
   }
 
-  // If profile is present, continue
-  if (activeProfileId) {
-    return NextResponse.next()
-  }
+  // Add security headers
+  const response = NextResponse.next()
+  response.headers.set("X-Frame-Options", "DENY")
+  response.headers.set("X-Content-Type-Options", "nosniff")
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin")
 
-  // No active profile: redirect to profiles selector
-  const url = req.nextUrl.clone()
-  url.pathname = "/profiles"
-  return NextResponse.redirect(url)
+  return response
 }
 
 export const config = {
   matcher: [
-    // Run on all app routes except static and api
-    "/((?!_next/static|_next/image|favicon.ico|api).*)",
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\..*|_next).*)",
   ],
 }
 

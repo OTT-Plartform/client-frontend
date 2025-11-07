@@ -2,19 +2,19 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useDispatch } from "react-redux"
+import { useAppDispatch, useAppSelector } from "@/store/hooks"
+import { savePersonalInfo, setPersonalInfoField, setSelectedPlan, setPaymentMethod, setSubscriptionPeriod } from "@/store/slices/onboardingSlice"
+import { fetchPlans, fetchPaymentMethods } from "@/store/slices/subscriptionSlice"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Stepper } from "@/components/ui/stepper"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
-import { setUser } from "@/store/slices/authSlice"
 import { showSnackbar } from "@/store/slices/uiSlice"
 import {
   User,
@@ -28,164 +28,15 @@ import {
   CreditCard,
   Smartphone,
   Home,
-  Phone,
   Globe,
   MapPin,
-  Heart,
   Loader2,
 } from "lucide-react"
+import AFRICAN_COUNTRIES from "@/lib/countries"
 
 // Fallback subscription plans (will be replaced by backend data)
-const fallbackPlans = [
-  {
-    id: 1,
-    name: "Basic",
-    price: "4.99",
-    period: "month",
-    description: "Perfect for casual viewers",
-    features: [
-      "Full content library",
-      "HD streaming quality",
-      "No ads",
-      "2 devices simultaneously",
-      "Standard support",
-      "5 downloads per month",
-    ],
-    popular: false,
-    maxDevices: 2,
-    quality: "HD",
-  },
-  {
-    id: 2,
-    name: "Premium",
-    price: "9.99",
-    period: "month",
-    description: "Most popular choice",
-    features: [
-      "Full content library",
-      "4K Ultra HD streaming",
-      "No ads",
-      "4 devices simultaneously",
-      "Priority support",
-      "Unlimited downloads",
-      "Offline viewing",
-      "Early access to new content",
-    ],
-    popular: true,
-    maxDevices: 4,
-    quality: "4K",
-  },
-  {
-    id: 3,
-    name: "Family",
-    price: "14.99",
-    period: "month",
-    description: "Best for families",
-    features: [
-      "Full content library",
-      "4K Ultra HD streaming",
-      "No ads",
-      "6 devices simultaneously",
-      "24/7 premium support",
-      "Unlimited downloads",
-      "Offline viewing",
-      "Parental controls",
-      "Multiple profiles (up to 6)",
-      "Early access to new content",
-    ],
-    popular: false,
-    maxDevices: 6,
-    quality: "4K",
-  },
-]
 
-// African countries with phone codes
-const africanCountries = [
-  { code: "DZ", name: "Algeria", phoneCode: "+213" },
-  { code: "AO", name: "Angola", phoneCode: "+244" },
-  { code: "BJ", name: "Benin", phoneCode: "+229" },
-  { code: "BW", name: "Botswana", phoneCode: "+267" },
-  { code: "BF", name: "Burkina Faso", phoneCode: "+226" },
-  { code: "BI", name: "Burundi", phoneCode: "+257" },
-  { code: "CM", name: "Cameroon", phoneCode: "+237" },
-  { code: "CV", name: "Cape Verde", phoneCode: "+238" },
-  { code: "CF", name: "Central African Republic", phoneCode: "+236" },
-  { code: "TD", name: "Chad", phoneCode: "+235" },
-  { code: "KM", name: "Comoros", phoneCode: "+269" },
-  { code: "CG", name: "Congo", phoneCode: "+242" },
-  { code: "CD", name: "DR Congo", phoneCode: "+243" },
-  { code: "DJ", name: "Djibouti", phoneCode: "+253" },
-  { code: "EG", name: "Egypt", phoneCode: "+20" },
-  { code: "GQ", name: "Equatorial Guinea", phoneCode: "+240" },
-  { code: "ER", name: "Eritrea", phoneCode: "+291" },
-  { code: "ET", name: "Ethiopia", phoneCode: "+251" },
-  { code: "GA", name: "Gabon", phoneCode: "+241" },
-  { code: "GM", name: "Gambia", phoneCode: "+220" },
-  { code: "GH", name: "Ghana", phoneCode: "+233" },
-  { code: "GN", name: "Guinea", phoneCode: "+224" },
-  { code: "GW", name: "Guinea-Bissau", phoneCode: "+245" },
-  { code: "KE", name: "Kenya", phoneCode: "+254" },
-  { code: "LS", name: "Lesotho", phoneCode: "+266" },
-  { code: "LR", name: "Liberia", phoneCode: "+231" },
-  { code: "LY", name: "Libya", phoneCode: "+218" },
-  { code: "MG", name: "Madagascar", phoneCode: "+261" },
-  { code: "MW", name: "Malawi", phoneCode: "+265" },
-  { code: "ML", name: "Mali", phoneCode: "+223" },
-  { code: "MR", name: "Mauritania", phoneCode: "+222" },
-  { code: "MU", name: "Mauritius", phoneCode: "+230" },
-  { code: "MA", name: "Morocco", phoneCode: "+212" },
-  { code: "MZ", name: "Mozambique", phoneCode: "+258" },
-  { code: "NA", name: "Namibia", phoneCode: "+264" },
-  { code: "NE", name: "Niger", phoneCode: "+227" },
-  { code: "NG", name: "Nigeria", phoneCode: "+234" },
-  { code: "RW", name: "Rwanda", phoneCode: "+250" },
-  { code: "ST", name: "São Tomé and Príncipe", phoneCode: "+239" },
-  { code: "SN", name: "Senegal", phoneCode: "+220" },
-  { code: "SC", name: "Seychelles", phoneCode: "+248" },
-  { code: "SL", name: "Sierra Leone", phoneCode: "+232" },
-  { code: "SO", name: "Somalia", phoneCode: "+252" },
-  { code: "ZA", name: "South Africa", phoneCode: "+27" },
-  { code: "SS", name: "South Sudan", phoneCode: "+211" },
-  { code: "SD", name: "Sudan", phoneCode: "+249" },
-  { code: "SZ", name: "Eswatini", phoneCode: "+268" },
-  { code: "TZ", name: "Tanzania", phoneCode: "+255" },
-  { code: "TG", name: "Togo", phoneCode: "+228" },
-  { code: "TN", name: "Tunisia", phoneCode: "+216" },
-  { code: "UG", name: "Uganda", phoneCode: "+238" },
-  { code: "ZM", name: "Zambia", phoneCode: "+260" },
-  { code: "ZW", name: "Zimbabwe", phoneCode: "+263" },
-]
 
-const paymentMethods = [
-  {
-    id: "ecocash",
-    name: "EcoCash",
-    type: "mobile_money",
-    description: "Pay with your EcoCash wallet",
-    fees: "No fees",
-  },
-  {
-    id: "inbucks",
-    name: "InBucks",
-    type: "mobile_money",
-    description: "Pay with your InBucks account",
-    fees: "No fees",
-  },
-  {
-    id: "credit_card",
-    name: "Credit Card",
-    type: "card",
-    description: "Pay with your credit card",
-    fees: "Standard rates apply",
-  },
-  {
-    id: "paypal",
-    name: "PayPal",
-    type: "digital_wallet",
-    description: "Pay with your PayPal account",
-    fees: "Standard rates apply",
-  },
-]
 
 interface OnboardingData {
   personalInfo: {
@@ -205,141 +56,126 @@ interface OnboardingData {
 
 export default function OnboardingPage() {
   const router = useRouter()
-  const dispatch = useDispatch()
+  const dispatch = useAppDispatch()
+  const authUser = useAppSelector((s) => s.auth.user)
+  const {
+    onboardingData,
+    isLoading: onboardingLoading,
+    error: onboardingError,
+  } = useAppSelector((s) => s.onboarding)
+
+  // Use subscription slice data
+  const {
+    plans: backendPlans,
+    paymentMethods: backendPaymentMethods,
+    isLoading: subscriptionLoading,
+  } = useAppSelector((s) => s.subscription)
+
+  // local UI state kept for date picker and visual phone selection
   const [currentStep, setCurrentStep] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
-  const [onboardingData, setOnboardingData] = useState<OnboardingData>({
-    personalInfo: {
-      firstName: "",
-      lastName: "",
-      phoneNumber: "",
-      dateOfBirth: "",
-      country: "ZW",
-      city: "",
-      bio: "",
-    },
-    interests: [],
-    selectedPlan: 2, // Default to Premium
-    paymentMethod: "",
-    subscriptionPeriod: "monthly",
-  })
-  const [selectedPhoneCountry, setSelectedPhoneCountry] = useState(africanCountries.find(c => c.code === "ZW") || africanCountries[0])
   const [datePickerOpen, setDatePickerOpen] = useState(false)
-  const [backendPlans, setBackendPlans] = useState<any[] | null>(null)
-  const [backendPaymentMethods, setBackendPaymentMethods] = useState<any[] | null>(null)
+  const [selectedYear, setSelectedYear] = useState<number>(2000)
+  const [selectedMonth, setSelectedMonth] = useState<number>(0)
+  const [selectedPhoneCountry, setSelectedPhoneCountry] = useState(
+    AFRICAN_COUNTRIES.find(c => c.code === onboardingData.personalInfo.country) || AFRICAN_COUNTRIES[0]
+  )
 
   useEffect(() => {
-    // Fetch data from backend
-    const fetchData = async () => {
-      try {
-        const { api } = await import("@/lib/api")
-        
-        // Fetch subscription plans
-        const plansResponse = await api.getSubscriptionPlans()
-        if (plansResponse.success && plansResponse.data?.subscription_plans) {
-          setBackendPlans(plansResponse.data.subscription_plans)
-        }
-        
-        // Fetch payment methods
-        const paymentResponse = await api.getPaymentMethods()
-        if (paymentResponse.success && paymentResponse.data?.methods) {
-          setBackendPaymentMethods(paymentResponse.data.methods)
-        }
-      } catch (error) {
-        console.error("Failed to fetch onboarding data:", error)
-        // Fallback to static data
-      }
+    // Only fetch if data doesn't exist yet
+    if (!backendPlans) {
+      dispatch(fetchPlans())
     }
-    
-    fetchData()
-  }, [])
+    if (!backendPaymentMethods) {
+      dispatch(fetchPaymentMethods())
+    }
+  }, [dispatch, backendPlans, backendPaymentMethods])
+
+  useEffect(() => {
+    // Default to the first plan if plans are loaded and none is selected
+    if (backendPlans && backendPlans.length > 0 && onboardingData.selectedPlan === 0) {
+      dispatch(setSelectedPlan(backendPlans[0].id))
+    }
+  }, [backendPlans, onboardingData.selectedPlan, dispatch])
+
+  useEffect(() => {
+    if (onboardingError) {
+      dispatch(showSnackbar({ message: onboardingError, type: "error" }))
+    }
+  }, [onboardingError, dispatch])
+
+  useEffect(() => {
+    // Initialize year and month from existing date
+    if (onboardingData.personalInfo.dateOfBirth) {
+      const date = new Date(onboardingData.personalInfo.dateOfBirth)
+      setSelectedYear(date.getFullYear())
+      setSelectedMonth(date.getMonth())
+    }
+  }, [onboardingData.personalInfo.dateOfBirth])
 
   const totalSteps = 2
 
   const updatePersonalInfo = (field: string, value: string) => {
-    setOnboardingData((prev) => ({
-      ...prev,
-      personalInfo: { ...prev.personalInfo, [field]: value },
-    }))
+    dispatch(setPersonalInfoField({ field: field as any, value }))
+    if (field === "country") {
+      const c = AFRICAN_COUNTRIES.find(cc => cc.code === value)
+      if (c) setSelectedPhoneCountry(c)
+    }
   }
 
-  // Interests step removed
-
   const handlePlanSelect = (planId: number) => {
-    setOnboardingData((prev) => ({ ...prev, selectedPlan: planId }))
+    dispatch(setSelectedPlan(planId))
   }
 
   const handlePaymentMethodSelect = (methodId: string) => {
-    setOnboardingData((prev) => ({ ...prev, paymentMethod: methodId }))
+    dispatch(setPaymentMethod(methodId))
   }
 
   const nextStep = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1)
-    }
+    if (currentStep < totalSteps) setCurrentStep(currentStep + 1)
   }
 
   const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1)
-    }
+    if (currentStep > 1) setCurrentStep(currentStep - 1)
   }
 
   const completeOnboarding = async () => {
     setIsLoading(true)
     try {
-      const { api } = await import("@/lib/api")
-      
-      // Step 1: Save personal info
-      await api.savePersonalInfo({
-          firstName: onboardingData.personalInfo.firstName,
-          lastName: onboardingData.personalInfo.lastName,
-        phoneNumber: onboardingData.personalInfo.phoneNumber,
-        dateOfBirth: onboardingData.personalInfo.dateOfBirth,
-          country: onboardingData.personalInfo.country,
-          city: onboardingData.personalInfo.city,
-          bio: onboardingData.personalInfo.bio || undefined,
-        })
-
-      // Redirect to checkout with selected plan data
+      // dispatch savePersonalInfo thunk with data from slice
+      const resp: any = await dispatch(savePersonalInfo(onboardingData.personalInfo)).unwrap()
+      // if thunk succeeded navigate to checkout
       router.push(`/checkout?plan=${onboardingData.selectedPlan}&period=${onboardingData.subscriptionPeriod}&payment=${onboardingData.paymentMethod}`)
     } catch (e: any) {
-      let message = "Onboarding failed"
-      const raw = e?.message ?? ""
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw)
-          const serverMsg = Array.isArray(parsed?.message)
-            ? parsed.message.join(", ")
-            : parsed?.message || parsed?.error
-          if (serverMsg) message = serverMsg
-        } catch {
-          message = raw
-        }
-      }
-      dispatch(showSnackbar({ message, type: "error" }))
+      const msg = e?.message || "Onboarding failed"
+      dispatch(showSnackbar({ message: msg, type: "error" }))
     } finally {
       setIsLoading(false)
     }
   }
 
-
-
-  const selectedPlan = (backendPlans || fallbackPlans).find((p: any) => p.id === onboardingData.selectedPlan)
-  const selectedPayment = (backendPaymentMethods || paymentMethods).find((p: any) => p.key === onboardingData.paymentMethod)
+  const selectedPlan = (backendPlans || []).find((p: any) => p.id === onboardingData.selectedPlan)
+  const selectedPayment = (backendPaymentMethods || []).find((p: any) => p.key === onboardingData.paymentMethod || p.id === onboardingData.paymentMethod)
   const getStepIcon = (step: number) => {
     const icons = [User, Crown]
     const Icon = icons[step - 1]
     return <Icon className="w-5 h-5" />
   }
-  // Interests step removed
+
+  // Generate year options (from 1924 to current year - 13 for age restriction)
+  const currentYear = new Date().getFullYear()
+  const yearOptions = Array.from({ length: currentYear - 1924 }, (_, i) => currentYear - 13 - i)
+  const monthOptions = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 relative overflow-hidden">
       {/* Background Elements */}
       <div className="absolute inset-0">
         <img
-          src="https://images.unsplash.com/photo-1489599162163-3fb4b4b5b0b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"
+          src="/loginback.png"
           alt="African Cinema Background"
           className="w-full h-full object-cover opacity-20"
         />
@@ -390,13 +226,12 @@ export default function OnboardingPage() {
                     <div key={i} className="flex flex-col items-center">
                       {/* Step Circle */}
                       <div
-                        className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 z-10 ${
-                          isCompleted
-                            ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-110"
-                            : isCurrent
-                              ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg ring-4 ring-blue-600/30 scale-110"
-                              : "bg-gray-700 text-gray-400 border-2 border-gray-600"
-                        }`}
+                        className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 z-10 ${isCompleted
+                          ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg scale-110"
+                          : isCurrent
+                            ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg ring-4 ring-blue-600/30 scale-110"
+                            : "bg-gray-700 text-gray-400 border-2 border-gray-600"
+                          }`}
                       >
                         {isCompleted ? <Check className="w-5 h-5" /> : getStepIcon(stepNumber)}
                       </div>
@@ -404,24 +239,22 @@ export default function OnboardingPage() {
                       {/* Step Label */}
                       <div className="mt-3 text-center">
                         <p
-                          className={`text-sm font-medium transition-colors duration-300 ${
-                            isCompleted || isCurrent ? "text-white" : "text-gray-400"
-                          }`}
+                          className={`text-sm font-medium transition-colors duration-300 ${isCompleted || isCurrent ? "text-white" : "text-gray-400"
+                            }`}
                         >
                           {stepLabels[i]}
                         </p>
                         <p
-                          className={`text-xs mt-1 transition-colors duration-300 ${
-                            isCompleted || isCurrent ? "text-blue-300" : "text-gray-500"
-                          }`}
+                          className={`text-xs mt-1 transition-colors duration-300 ${isCompleted || isCurrent ? "text-blue-300" : "text-gray-500"
+                            }`}
                         >
                           Step {stepNumber}
                         </p>
                       </div>
-                  </div>
+                    </div>
                   )
                 })}
-                </div>
+              </div>
             </div>
 
             {/* Current Step Indicator */}
@@ -429,8 +262,8 @@ export default function OnboardingPage() {
               <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
                 <div className="w-2 h-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full animate-pulse" />
                 <p className="text-white text-sm font-medium">
-                Step {currentStep} of {totalSteps}
-              </p>
+                  Step {currentStep} of {totalSteps}
+                </p>
               </div>
             </div>
           </div>
@@ -459,24 +292,24 @@ export default function OnboardingPage() {
                       <Label className="text-white font-medium text-lg">First Name</Label>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                      <Input
-                        placeholder="Enter your first name"
-                        value={onboardingData.personalInfo.firstName}
-                        onChange={(e) => updatePersonalInfo("firstName", e.target.value)}
+                        <Input
+                          placeholder="Enter your first name"
+                          value={onboardingData.personalInfo.firstName}
+                          onChange={(e) => updatePersonalInfo("firstName", e.target.value)}
                           className="h-12 pl-10 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-xl text-lg focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300"
-                      />
+                        />
                       </div>
                     </div>
                     <div className="space-y-3">
                       <Label className="text-white font-medium text-lg">Last Name</Label>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                      <Input
-                        placeholder="Enter your last name"
-                        value={onboardingData.personalInfo.lastName}
-                        onChange={(e) => updatePersonalInfo("lastName", e.target.value)}
+                        <Input
+                          placeholder="Enter your last name"
+                          value={onboardingData.personalInfo.lastName}
+                          onChange={(e) => updatePersonalInfo("lastName", e.target.value)}
                           className="h-12 pl-10 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-xl text-lg focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300"
-                      />
+                        />
                       </div>
                     </div>
                   </div>
@@ -486,21 +319,21 @@ export default function OnboardingPage() {
                       <Label className="text-white font-medium text-lg">Phone Number</Label>
                       <div className="flex gap-2">
                         <Select value={selectedPhoneCountry.code} onValueChange={(code) => {
-                          const country = africanCountries.find(c => c.code === code)
+                          const country = AFRICAN_COUNTRIES.find(c => c.code === code)
                           if (country) setSelectedPhoneCountry(country)
                         }}>
                           <SelectTrigger className="w-24 h-12 bg-white/10 border-white/20 text-white rounded-xl">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent className="bg-gray-800 border-gray-700 text-white">
-                            {africanCountries.map((country) => (
+                            {AFRICAN_COUNTRIES.map((country) => (
                               <SelectItem key={country.code} value={country.code} className="text-white hover:bg-gray-700">
                                 {country.phoneCode}
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                      <Input
+                        <Input
                           placeholder="77 123 4567"
                           value={onboardingData.personalInfo.phoneNumber}
                           onChange={(e) => updatePersonalInfo("phoneNumber", e.target.value)}
@@ -524,17 +357,60 @@ export default function OnboardingPage() {
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0 bg-gray-800 border-gray-700">
-                          <Calendar
-                            mode="single"
-                            selected={onboardingData.personalInfo.dateOfBirth ? new Date(onboardingData.personalInfo.dateOfBirth) : undefined}
-                            onSelect={(date) => {
-                              if (date) {
-                                updatePersonalInfo("dateOfBirth", date.toISOString().split('T')[0])
-                                setDatePickerOpen(false)
-                              }
-                            }}
-                            className="bg-gray-800 text-white"
-                          />
+                          <div className="p-4 space-y-4">
+                            {/* Year and Month Selectors */}
+                            <div className="flex gap-2">
+                              <Select
+                                value={selectedYear.toString()}
+                                onValueChange={(value) => setSelectedYear(parseInt(value))}
+                              >
+                                <SelectTrigger className="flex-1 bg-gray-700 border-gray-600 text-white">
+                                  <SelectValue placeholder="Year" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-gray-700 border-gray-600 text-white max-h-[200px]">
+                                  {yearOptions.map((year) => (
+                                    <SelectItem key={year} value={year.toString()} className="text-white hover:bg-gray-600">
+                                      {year}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Select
+                                value={selectedMonth.toString()}
+                                onValueChange={(value) => setSelectedMonth(parseInt(value))}
+                              >
+                                <SelectTrigger className="flex-1 bg-gray-700 border-gray-600 text-white">
+                                  <SelectValue placeholder="Month" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-gray-700 border-gray-600 text-white">
+                                  {monthOptions.map((month, index) => (
+                                    <SelectItem key={index} value={index.toString()} className="text-white hover:bg-gray-600">
+                                      {month}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            {/* Calendar for Day Selection */}
+                            <Calendar
+                              mode="single"
+                              selected={onboardingData.personalInfo.dateOfBirth ? new Date(onboardingData.personalInfo.dateOfBirth) : undefined}
+                              onSelect={(date) => {
+                                if (date) {
+                                  updatePersonalInfo("dateOfBirth", date.toISOString().split('T')[0])
+                                  setDatePickerOpen(false)
+                                }
+                              }}
+                              month={new Date(selectedYear, selectedMonth)}
+                              onMonthChange={(date) => {
+                                setSelectedYear(date.getFullYear())
+                                setSelectedMonth(date.getMonth())
+                              }}
+                              className="bg-gray-800 text-white rounded-lg"
+                              disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                            />
+                          </div>
                         </PopoverContent>
                       </Popover>
                     </div>
@@ -550,7 +426,7 @@ export default function OnboardingPage() {
                             className="w-full h-12 bg-white/10 border-white/20 text-white hover:bg-white/20 rounded-xl text-lg justify-start"
                           >
                             <Globe className="mr-2 h-4 w-4" />
-                            {africanCountries.find(c => c.code === onboardingData.personalInfo.country)?.name || "Select country"}
+                            {AFRICAN_COUNTRIES.find(c => c.code === onboardingData.personalInfo.country)?.name || "Select country"}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-[300px] p-0 bg-gray-800 border-gray-700">
@@ -559,7 +435,7 @@ export default function OnboardingPage() {
                             <CommandEmpty className="text-gray-400">No country found.</CommandEmpty>
                             <CommandList>
                               <CommandGroup>
-                                {africanCountries.map((country) => (
+                                {AFRICAN_COUNTRIES.map((country) => (
                                   <CommandItem
                                     key={country.code}
                                     value={country.name}
@@ -584,12 +460,12 @@ export default function OnboardingPage() {
                       <Label className="text-white font-medium text-lg">City</Label>
                       <div className="relative">
                         <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                      <Input
-                        placeholder="Enter your city"
-                        value={onboardingData.personalInfo.city}
-                        onChange={(e) => updatePersonalInfo("city", e.target.value)}
+                        <Input
+                          placeholder="Enter your city"
+                          value={onboardingData.personalInfo.city}
+                          onChange={(e) => updatePersonalInfo("city", e.target.value)}
                           className="h-12 pl-10 bg-white/10 border-white/20 text-white placeholder-gray-400 rounded-xl text-lg focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-300"
-                      />
+                        />
                       </div>
                     </div>
                   </div>
@@ -610,16 +486,15 @@ export default function OnboardingPage() {
               {currentStep === 2 && (
                 <div className="space-y-8">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {(backendPlans || fallbackPlans).map((plan: any) => {
+                    {(backendPlans || []).map((plan: any) => {
                       const isSelected = onboardingData.selectedPlan === plan.id
                       return (
                         <div
                           key={plan.id}
-                          className={`relative border-2 rounded-3xl p-6 cursor-pointer transition-all duration-300 transform hover:scale-105 ${
-                            isSelected
-                              ? "border-blue-600 bg-gradient-to-br from-blue-600/10 to-purple-600/10 shadow-xl"
-                              : "border-white/20 bg-white/5 hover:border-white/40 hover:bg-white/10"
-                          } ${plan.is_popular ? "ring-2 ring-blue-600" : ""}`}
+                          className={`relative border-2 rounded-3xl p-6 cursor-pointer transition-all duration-300 transform hover:scale-105 ${isSelected
+                            ? "border-blue-600 bg-gradient-to-br from-blue-600/10 to-purple-600/10 shadow-xl"
+                            : "border-white/20 bg-white/5 hover:border-white/40 hover:bg-white/10"
+                            } ${plan.is_popular ? "ring-2 ring-blue-600" : ""}`}
                           onClick={() => handlePlanSelect(plan.id)}
                         >
                           {plan.is_popular && (
@@ -669,22 +544,20 @@ export default function OnboardingPage() {
                   <div className="flex justify-center">
                     <div className="bg-white/10 rounded-2xl p-2 flex backdrop-blur-sm">
                       <button
-                        onClick={() => setOnboardingData((prev) => ({ ...prev, subscriptionPeriod: "monthly" }))}
-                        className={`px-8 py-3 rounded-xl transition-all text-lg font-medium ${
-                          onboardingData.subscriptionPeriod === "monthly"
-                            ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
-                            : "text-gray-400 hover:text-white"
-                        }`}
+                        onClick={() => dispatch(setSubscriptionPeriod("monthly"))}
+                        className={`px-8 py-3 rounded-xl transition-all text-lg font-medium ${onboardingData.subscriptionPeriod === "monthly"
+                          ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
+                          : "text-gray-400 hover:text-white"
+                          }`}
                       >
                         Monthly
                       </button>
                       <button
-                        onClick={() => setOnboardingData((prev) => ({ ...prev, subscriptionPeriod: "yearly" }))}
-                        className={`px-8 py-3 rounded-xl transition-all text-lg font-medium ${
-                          onboardingData.subscriptionPeriod === "yearly"
-                            ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
-                            : "text-gray-400 hover:text-white"
-                        }`}
+                        onClick={() => dispatch(setSubscriptionPeriod("yearly"))}
+                        className={`px-8 py-3 rounded-xl transition-all text-lg font-medium ${onboardingData.subscriptionPeriod === "yearly"
+                          ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
+                          : "text-gray-400 hover:text-white"
+                          }`}
                       >
                         Yearly (Save 20%)
                       </button>
@@ -694,38 +567,37 @@ export default function OnboardingPage() {
                   {/* Payment Method Selection */}
                   <div className="space-y-4">
                     <h4 className="text-white font-semibold text-xl text-center">Payment Method</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {(backendPaymentMethods || paymentMethods).map((method: any) => {
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {(backendPaymentMethods || []).map((method: any) => {
                         const methodKey = method.key || method.id
                         const methodLabel = method.label || method.name
                         const isSelected = onboardingData.paymentMethod === methodKey
-                          return (
-                            <div
+                        return (
+                          <div
                             key={methodKey}
-                            className={`border-2 rounded-2xl p-4 cursor-pointer transition-all duration-300 transform hover:scale-105 ${
-                                isSelected
-                                ? "border-blue-600 bg-gradient-to-br from-blue-600/10 to-purple-600/10 shadow-lg"
-                                : "border-white/20 bg-white/5 hover:border-white/40 hover:bg-white/10"
-                            }`}
+                            className={`border-2 rounded-2xl p-4 cursor-pointer transition-all duration-300 transform hover:scale-105 ${isSelected
+                              ? "border-blue-600 bg-gradient-to-br from-blue-600/10 to-purple-600/10 shadow-lg"
+                              : "border-white/20 bg-white/5 hover:border-white/40 hover:bg-white/10"
+                              }`}
                             onClick={() => handlePaymentMethodSelect(methodKey)}
                           >
                             <div className="flex items-center gap-3">
                               <div className="w-12 h-12 bg-gradient-to-r from-gray-600 to-gray-700 rounded-xl flex items-center justify-center">
                                 {(method.type === "mobile_money" || methodKey === "ecocash" || methodKey === "inbucks") ? (
-                                    <Smartphone className="w-6 h-6 text-white" />
-                                  ) : (
-                                    <CreditCard className="w-6 h-6 text-white" />
-                                  )}
-                                </div>
-                                <div className="flex-1">
+                                  <Smartphone className="w-6 h-6 text-white" />
+                                ) : (
+                                  <CreditCard className="w-6 h-6 text-white" />
+                                )}
+                              </div>
+                              <div className="flex-1">
                                 <h4 className="text-white font-semibold">{methodLabel}</h4>
                                 <p className="text-gray-400 text-sm">{method.description || "Secure payment method"}</p>
-                                </div>
-                                {isSelected && <CheckCircle className="w-6 h-6 text-blue-600" />}
                               </div>
+                              {isSelected && <CheckCircle className="w-6 h-6 text-blue-600" />}
                             </div>
-                          )
-                        })}
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
                 </div>

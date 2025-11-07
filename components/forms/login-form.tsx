@@ -1,17 +1,17 @@
 "use client"
 
-import { useState } from "react"
-import { useDispatch, useSelector } from "react-redux"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { setUser, setOAuthLoading } from "@/store/slices/authSlice"
+import { useAppDispatch, useAppSelector } from "@/store/hooks"
+import { loginUser, initiateOAuth, clearError, clearFieldError } from "@/store/slices/authSlice"
 import { showSnackbar } from "@/store/slices/uiSlice"
-import { api } from "@/lib/api"
-import { Eye, EyeOff, Loader2, Mail, Lock, ArrowRight, LogIn } from "lucide-react"
+import { getDeviceInfo } from "@/lib/deviceUtils"
+import { Eye, EyeOff, Loader2, Mail, Lock, ArrowRight } from "lucide-react"
 import { FaGoogle, FaFacebookF, FaApple, FaTwitter, FaGithub } from "react-icons/fa"
 
 const loginSchema = yup.object({
@@ -26,11 +26,9 @@ interface LoginFormProps {
 }
 
 export default function LoginForm({ onSuccess }: LoginFormProps) {
-  const dispatch = useDispatch()
-  const { isOAuthLoading, oauthProvider } = useSelector((state: any) => state.auth)
+  const dispatch = useAppDispatch()
+  const { isLoading, isOAuthLoading, oauthProvider, error, validationErrors } = useAppSelector((state) => state.auth)
   const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   const {
     register,
@@ -40,126 +38,86 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
     resolver: yupResolver(loginSchema),
   })
 
-  const computeDeviceInfo = () => {
-    try {
-      const userAgent = navigator.userAgent || ""
-      const isMobile = /Mobi|Android/i.test(userAgent)
-      const isTablet = /iPad|Tablet/i.test(userAgent)
-      let device_type = isMobile ? "mobile" : isTablet ? "tablet" : "desktop"
-      const device_name = navigator.platform || "web"
-      const device_model = navigator.vendor || "browser"
-      const os_name = (navigator as any).userAgentData?.platform || navigator.platform || "unknown"
-      const os_version = ""
-      const app_version = process.env.NEXT_PUBLIC_APP_VERSION || "web"
-      const screen_resolution = typeof window !== 'undefined' ? `${window.screen.width}x${window.screen.height}` : undefined
-      // Stable fingerprint fallback to localStorage uuid
-      const key = "device_identifier"
-      let device_identifier = localStorage.getItem(key) || ""
-      if (!device_identifier) {
-        device_identifier = crypto?.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`
-        localStorage.setItem(key, device_identifier)
-      }
-      return {
-        device_name,
-        device_type,
-        device_identifier,
-        device_model,
-        os_name,
-        os_version,
-        app_version,
-        device_metadata: {
-          user_agent: userAgent,
-          screen_resolution,
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        },
-      }
-    } catch {
-      return {}
+  // Show error snackbar when error changes
+  useEffect(() => {
+    if (error) {
+      dispatch(showSnackbar({ message: error, type: "error" }))
     }
-  }
+  }, [error, dispatch])
 
   const onSubmit = async (data: LoginFormData) => {
-    setIsLoading(true)
-    setFieldErrors({}) // Clear previous field errors
+    dispatch(clearError())
     
     try {
-      const deviceInfo = computeDeviceInfo()
-      const res = await api.login({ email: data.email, password: data.password, ...deviceInfo })
-      if (res.success && res.data?.user) {
-        dispatch(setUser(res.data.user))
-        localStorage.setItem("userData", JSON.stringify(res.data.user))
-        dispatch(showSnackbar({ message: "Welcome back! Login successful", type: "success" }))
-        onSuccess?.()
-      } else {
-        throw new Error("Login failed")
-      }
-    } catch (e: any) {
-      let message = "Login failed"
-      const raw = e?.message ?? ""
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw)
-          // Check for backend validation errors
-          if (parsed?.errors && typeof parsed.errors === 'object') {
-            setFieldErrors(parsed.errors)
-            message = parsed.message || "Validation failed"
-          } else {
-            const serverMsg = Array.isArray(parsed?.message)
-              ? parsed.message.join(", ")
-              : parsed?.message || parsed?.error
-            if (serverMsg) message = serverMsg
-          }
-        } catch {
-          message = raw
-        }
-      }
-      dispatch(showSnackbar({ message, type: "error" }))
-    } finally {
-      setIsLoading(false)
+      const deviceInfo = getDeviceInfo()
+      
+      await dispatch(loginUser({ 
+        email: data.email, 
+        password: data.password,
+        ...deviceInfo
+      })).unwrap()
+      
+      dispatch(showSnackbar({ 
+        message: "Welcome back! Login successful", 
+        type: "success" 
+      }))
+      
+      onSuccess?.()
+    } catch (err) {
+      // Error is already in Redux state, no need to handle here
     }
   }
 
   // OAuth handlers
   const handleGoogleLogin = async () => {
     try {
-      dispatch(setOAuthLoading({ loading: true, provider: 'google' }))
+      const result = await dispatch(initiateOAuth('google')).unwrap()
       
-      const googleAuthUrl = await api.googleAuth()
-      
-      // Redirect to Google OAuth
-      window.location.href = googleAuthUrl
+      if (result.redirectUrl) {
+        window.location.href = result.redirectUrl
+      }
     } catch (error: any) {
-      dispatch(setOAuthLoading({ loading: false, provider: undefined }))
-      dispatch(showSnackbar({ 
-        message: error.message || "Failed to initialize Google login", 
-        type: "error" 
-      }))
+      // Error is already in Redux state
     }
   }
 
   const handleFacebookLogin = async () => {
     try {
-      dispatch(setOAuthLoading({ loading: true, provider: 'facebook' }))
+      const result = await dispatch(initiateOAuth('facebook')).unwrap()
       
-      const base = "https://ubiqent.com/backend/api"
-      window.location.href = `${base}/auth/facebook`
+      if (result.redirectUrl) {
+        window.location.href = result.redirectUrl
+      }
     } catch (error: any) {
-      dispatch(setOAuthLoading({ loading: false, provider: undefined }))
-      dispatch(showSnackbar({ 
-        message: "Failed to initialize Facebook login", 
-        type: "error" 
-      }))
+      // Error is already in Redux state
     }
   }
 
-  const handleAppleLogin = () => dispatch(showSnackbar({ message: "Apple login not configured", type: "info" }))
-  const handleTwitterLogin = () => dispatch(showSnackbar({ message: "Twitter login not configured", type: "info" }))
-  const handleGithubLogin = () => dispatch(showSnackbar({ message: "GitHub login not configured", type: "info" }))
+  const handleAppleLogin = () => {
+    dispatch(showSnackbar({ 
+      message: "Apple login coming soon", 
+      type: "info" 
+    }))
+  }
 
-  // Clear field errors when user starts typing
+  const handleTwitterLogin = () => {
+    dispatch(showSnackbar({ 
+      message: "Twitter login coming soon", 
+      type: "info" 
+    }))
+  }
+
+  const handleGithubLogin = () => {
+    dispatch(showSnackbar({ 
+      message: "GitHub login coming soon", 
+      type: "info" 
+    }))
+  }
+
+  // Clear field error when user starts typing
   const handleInputChange = (field: string) => {
-    if (fieldErrors[field]) {
-      setFieldErrors(prev => ({ ...prev, [field]: "" }))
+    if (validationErrors[field]) {
+      dispatch(clearFieldError(field))
     }
   }
 
@@ -175,7 +133,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
             type="email"
             placeholder="Enter your email"
             className={`pl-12 h-12 bg-gray-800/50 border-gray-700 text-white placeholder-gray-400 rounded-xl transition-all duration-200 ${
-              fieldErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'focus:border-red-600 focus:ring-red-600/20'
+              validationErrors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'focus:border-red-600 focus:ring-red-600/20'
             }`}
             {...register("email")}
             onChange={(e) => {
@@ -184,10 +142,10 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
             }}
           />
         </div>
-        {(errors.email || fieldErrors.email) && (
+        {(errors.email || validationErrors.email) && (
           <p className="text-red-400 text-sm flex items-center gap-1">
             <span className="w-1 h-1 bg-red-400 rounded-full" />
-            {fieldErrors.email || errors.email?.message}
+            {validationErrors.email || errors.email?.message}
           </p>
         )}
       </div>
@@ -202,7 +160,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
             type={showPassword ? "text" : "password"}
             placeholder="Enter your password"
             className={`pl-12 pr-12 h-12 bg-gray-800/50 border-gray-700 text-white placeholder-gray-400 rounded-xl transition-all duration-200 ${
-              fieldErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'focus:border-red-600 focus:ring-red-600/20'
+              validationErrors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20' : 'focus:border-red-600 focus:ring-red-600/20'
             }`}
             {...register("password")}
             onChange={(e) => {
@@ -220,10 +178,10 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
             {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
           </Button>
         </div>
-        {(errors.password || fieldErrors.password) && (
+        {(errors.password || validationErrors.password) && (
           <p className="text-red-400 text-sm flex items-center gap-1">
             <span className="w-1 h-1 bg-red-400 rounded-full" />
-            {fieldErrors.password || errors.password?.message}
+            {validationErrors.password || errors.password?.message}
           </p>
         )}
       </div>
@@ -246,7 +204,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
       <Button
         type="submit"
         className="w-full h-12 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
-        disabled={isLoading || Object.keys(fieldErrors).length > 0}
+        disabled={isLoading}
       >
         {isLoading ? (
           <>
@@ -271,7 +229,7 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
         </div>
       </div>
 
-      {/* Social Login Buttons (circular icons) */}
+      {/* Social Login Buttons */}
       <div className="flex items-center justify-center gap-3">
         <Button 
           type="button" 
@@ -301,13 +259,34 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
             <FaFacebookF className="h-5 w-5" />
           )}
         </Button>
-        <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-full bg-black text-white hover:bg-gray-900" onClick={handleAppleLogin}>
+        <Button 
+          type="button" 
+          variant="outline" 
+          size="icon" 
+          className="h-11 w-11 rounded-full bg-black text-white hover:bg-gray-900" 
+          onClick={handleAppleLogin}
+          disabled={isOAuthLoading}
+        >
           <FaApple className="h-5 w-5" />
         </Button>
-        <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-full bg-[#1DA1F2] text-white hover:opacity-90 border-0" onClick={handleTwitterLogin}>
+        <Button 
+          type="button" 
+          variant="outline" 
+          size="icon" 
+          className="h-11 w-11 rounded-full bg-[#1DA1F2] text-white hover:opacity-90 border-0" 
+          onClick={handleTwitterLogin}
+          disabled={isOAuthLoading}
+        >
           <FaTwitter className="h-5 w-5" />
         </Button>
-        <Button type="button" variant="outline" size="icon" className="h-11 w-11 rounded-full bg-gray-800 text-white hover:bg-gray-700" onClick={handleGithubLogin}>
+        <Button 
+          type="button" 
+          variant="outline" 
+          size="icon" 
+          className="h-11 w-11 rounded-full bg-gray-800 text-white hover:bg-gray-700" 
+          onClick={handleGithubLogin}
+          disabled={isOAuthLoading}
+        >
           <FaGithub className="h-5 w-5" />
         </Button>
       </div>

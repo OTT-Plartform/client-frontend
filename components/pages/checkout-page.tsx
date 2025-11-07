@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useDispatch } from "react-redux"
+import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { setUser } from "@/store/slices/authSlice"
+import { fetchUserProfile } from "@/store/slices/authSlice"
 import { showSnackbar } from "@/store/slices/uiSlice"
+import { saveSubscription } from "@/store/slices/onboardingSlice"
+import { fetchPlans, fetchPaymentMethods } from "@/store/slices/subscriptionSlice"
 import PaymentSuccess from "@/components/animations/payment-success"
 import {
   Check,
@@ -33,8 +35,11 @@ interface CheckoutData {
 export default function CheckoutPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const dispatch = useDispatch()
-  const [isLoading, setIsLoading] = useState(false)
+  const dispatch = useAppDispatch()
+
+  const { plans, paymentMethods } = useAppSelector((s) => s.subscription)
+  const { isLoading: isSavingSubscription } = useAppSelector((s) => s.onboarding)
+
   const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null)
   const [selectedPlan, setSelectedPlan] = useState<any>(null)
   const [paymentMethod, setPaymentMethod] = useState<any>(null)
@@ -50,44 +55,36 @@ export default function CheckoutPage() {
       setCheckoutData({
         planId: parseInt(planId),
         period,
-        paymentMethod: payment
+        paymentMethod: payment,
       })
     } else {
       // Redirect back to onboarding if data is missing
-      router.push('/onboarding')
+      router.push("/onboarding")
     }
   }, [searchParams, router])
 
   useEffect(() => {
-    // Fetch plan and payment method details
-    const fetchCheckoutData = async () => {
-      if (!checkoutData) return
+    // Ensure plans and payment methods are loaded from state
+    if (!plans) {
+      dispatch(fetchPlans())
+    }
+    if (!paymentMethods) {
+      dispatch(fetchPaymentMethods())
+    }
 
-      try {
-        const { api } = await import("@/lib/api")
-        
-        // Fetch subscription plans
-        const plansResponse = await api.getSubscriptionPlans()
-        if (plansResponse.success && plansResponse.data?.subscription_plans) {
-          const plan = plansResponse.data.subscription_plans.find((p: any) => p.id === checkoutData.planId)
-          setSelectedPlan(plan)
-        }
-        
-        // Fetch payment methods
-        const paymentResponse = await api.getPaymentMethods()
-        if (paymentResponse.success && paymentResponse.data?.methods) {
-          const method = paymentResponse.data.methods.find((m: any) => m.key === checkoutData.paymentMethod)
-          setPaymentMethod(method)
-        }
-      } catch (error) {
-        console.error("Failed to fetch checkout data:", error)
-        dispatch(showSnackbar({ message: "Failed to load checkout data", type: "error" }))
-        router.push('/onboarding')
+    if (checkoutData && plans && paymentMethods) {
+      const plan = plans.find((p: any) => p.id === checkoutData.planId)
+      setSelectedPlan(plan)
+
+      const method = paymentMethods.find((m: any) => m.key === checkoutData.paymentMethod)
+      setPaymentMethod(method)
+
+      if (!plan || !method) {
+        dispatch(showSnackbar({ message: "Invalid checkout data. Redirecting...", type: "error" }))
+        router.push("/onboarding")
       }
     }
-    
-    fetchCheckoutData()
-  }, [checkoutData, dispatch, router])
+  }, [checkoutData, plans, paymentMethods, dispatch, router])
 
   const getPlanIcon = (planId: number) => {
     if (planId === 1) return <Play className="w-10 h-10 text-white" />
@@ -122,42 +119,25 @@ export default function CheckoutPage() {
 
   const handlePayment = async () => {
     if (!checkoutData || !selectedPlan) return
-    
-    setIsLoading(true)
-    try {
-      const { api } = await import("@/lib/api")
-      
-      // Save subscription
-      await api.saveSubscription({
-        planId: checkoutData.planId,
-        billingCycle: checkoutData.period,
-        paymentMethod: checkoutData.paymentMethod,
-      })
 
-      // Get updated user profile
-      const profileResponse = await api.getProfile()
-      if (profileResponse.success) {
-        dispatch(setUser(profileResponse.data.user))
-        // Show payment success animation
-        setShowPaymentSuccess(true)
-      }
+    try {
+      // Save subscription using the thunk
+      await dispatch(
+        saveSubscription({
+          planId: checkoutData.planId,
+          billingCycle: checkoutData.period,
+          paymentMethod: checkoutData.paymentMethod,
+        }),
+      ).unwrap()
+
+      // Get updated user profile using the thunk
+      await dispatch(fetchUserProfile()).unwrap()
+
+      // Show payment success animation
+      setShowPaymentSuccess(true)
     } catch (e: any) {
-      let message = "Payment failed"
-      const raw = e?.message ?? ""
-      if (raw) {
-        try {
-          const parsed = JSON.parse(raw)
-          const serverMsg = Array.isArray(parsed?.message)
-            ? parsed.message.join(", ")
-            : parsed?.message || parsed?.error
-          if (serverMsg) message = serverMsg
-        } catch {
-          message = raw
-        }
-      }
+      const message = e?.message || "Payment failed. Please try again."
       dispatch(showSnackbar({ message, type: "error" }))
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -165,7 +145,7 @@ export default function CheckoutPage() {
     router.push("/")
   }
 
-  if (!checkoutData || !selectedPlan) {
+  if (!checkoutData || !selectedPlan || !paymentMethod) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
         <div className="text-center">
@@ -194,7 +174,7 @@ export default function CheckoutPage() {
       {/* Background Elements */}
       <div className="absolute inset-0">
         <img
-          src="https://images.unsplash.com/photo-1489599162163-3fb4b4b5b0b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80"
+          src="/loginback.png"
           alt="African Cinema Background"
           className="w-full h-full object-cover opacity-20"
         />
@@ -334,10 +314,10 @@ export default function CheckoutPage() {
               <div className="mt-8 text-center">
                 <Button
                   onClick={handlePayment}
-                  disabled={isLoading}
+                  disabled={isSavingSubscription}
                   className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-12 py-4 rounded-2xl text-xl font-semibold shadow-lg w-full max-w-md"
                 >
-                  {isLoading ? (
+                  {isSavingSubscription ? (
                     <>
                       <Loader2 className="w-6 h-6 mr-3 animate-spin" />
                       Processing Payment...
